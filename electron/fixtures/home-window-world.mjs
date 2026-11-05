@@ -14,7 +14,7 @@ export const done = (cloud = {}) => ({ v: 1, phase: "done", cloud: { origin: CLO
 export const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
 
 /**
- * The window onto My Cloud with fakes on every side: the journal, this computer's freeze marker, the MausBot Cloud
+ * The window onto My Cloud with fakes on every side: the journal, this computer's freeze marker, the RanzoBot Cloud
  * sign-in (its power word, wake, pairing code), My Cloud's answers (`cloud`), the window (where it went), the startup
  * screen and a manual clock.
  */

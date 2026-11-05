@@ -1,4 +1,4 @@
-// Sending one @devs report to the MausBot team's endpoint and reading its answer: 201 {id}; 400 or 413 {error}; 429
+// Sending one @devs report to the RanzoBot team's endpoint and reading its answer: 201 {id}; 400 or 413 {error}; 429
 // {error, retryAfter} (seconds, also Retry-After). And asking that endpoint's origin what became of the reports this app
 // sent (POST /api/bug-reports/status): the same way on the desktop and on a Cloud, which also signs its question with the
 // bootstrap secret it shares with the Admin, so the Admin can tell whether its plan still runs.

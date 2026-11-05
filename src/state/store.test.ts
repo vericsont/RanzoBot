@@ -2654,6 +2654,12 @@ describe("live config frames", () => {
     });
   });
 
+  it("keeps prompt settings when a config frame arrives", () => {
+    const prompts = { bot: "custom", opencode: "native" };
+    const state = reducer(initialState, { type: "configStatus", config: configStatusFromFrame({ ...baseFrame, prompts }) });
+    expect(state.config?.prompts).toEqual(prompts);
+  });
+
   it("keeps live settings when a config frame arrives", () => {
     const live = { configured: true, voice: "sol", readTypedReplies: false, idleMinutes: 7 };
     const config = configStatusFromFrame({ ...baseFrame, live });

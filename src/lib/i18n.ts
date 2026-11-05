@@ -82,8 +82,8 @@ export function tFromServer(key: string | undefined, fallback: string | undefine
 /** `{app}` is the product's name as a person reads it (productName) unless `params` names it. */
 export function t(key: LocaleKey, params?: Record<string, string | number>): string {
   let template = activePack[key] ?? en[key];
-  if (!UPSTREAM_VERSION_KEYS.has(key)) template = template.replaceAll("OpenMausBot", productName());
-  if (PRODUCT_COPY_KEYS.has(key)) template = template.replaceAll("MausBot", productName());
+  if (!UPSTREAM_VERSION_KEYS.has(key)) template = template.replaceAll("RanzoBot", productName());
+  if (PRODUCT_COPY_KEYS.has(key)) template = template.replaceAll("RanzoBot", productName());
   if (!params && !template.includes("{app}")) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) =>
     params && name in params ? String(params[name]) : name === "app" ? productName() : match,

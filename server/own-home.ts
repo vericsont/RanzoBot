@@ -5,7 +5,7 @@ import { movedFrom } from "./cloud-send-arrived.ts";
 import type { RequestAuth } from "./request-auth.ts";
 
 export interface OwnServerFacts {
-  /** A Cloud home, a team's Cloud or a hosted workspace: MausBot or an organization runs it, never one person. */
+  /** A Cloud home, a team's Cloud or a hosted workspace: RanzoBot or an organization runs it, never one person. */
   managed: boolean;
   /** Others sign in here: a team, an organization's members, or members on the sign-in list. */
   shared: boolean;

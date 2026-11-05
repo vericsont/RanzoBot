@@ -180,7 +180,7 @@ export interface AcpSupport {
   clientFileSystem?: boolean;
   /** Sent as `clientCapabilities._meta` on initialize, where agents read vendor capabilities. */
   clientCapabilitiesMeta?: Record<string, unknown>;
-  /** The agent reaches MCP servers by URL: OpenMausBot's own servers are this server's endpoints, no process each. */
+  /** The agent reaches MCP servers by URL: RanzoBot's own servers are this server's endpoints, no process each. */
   ownMcpOverHttp?: boolean;
   /** How many tools the agent lists of its own beside the MCP servers', counted against a provider's tool limit. */
   engineTools?: number;
@@ -199,7 +199,7 @@ export interface AcpSupport {
   /** Mutate the child env once the turn model is known; catalog refresh and snapshot see only `transformEnv`. */
   applyTurnEnv?(
     env: Record<string, string | undefined>,
-    ctx: { model?: string; requestedModel?: string; fullAuto: boolean; botId?: string; cwd: string; toolScope?: SendTurnInput["toolScope"]; threadId: string; mcpServers: AcpMcpServer[] },
+    ctx: { model?: string; requestedModel?: string; fullAuto: boolean; botId?: string; cwd: string; toolScope?: SendTurnInput["toolScope"]; threadId: string; mcpServers: AcpMcpServer[]; openCodeAgentPrompt?: string },
   ): void;
   /** The authenticate methodId from initialize's authMethods; null skips authenticate. */
   pickAuthMethod(authMethods: Array<{ id?: string }>, env: Record<string, string | undefined>): string | null;
@@ -304,7 +304,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
   const SOURCE = support.nativeSource;
   const decodeConfig = decodeAcpConfig(support.defaultCli);
   const DENY_TIMEOUT_NOTE =
-    "OpenMausBot: nobody answered this permission request in time. Skip this action and finish what you can without it.";
+    "RanzoBot: nobody answered this permission request in time. Skip this action and finish what you can without it.";
   const QUESTION_NO_MATCH_NOTE =
     "That answer isn't one of the choices this AI can take, so the question was closed and the turn stopped. Ask again and pick one of the options.";
 
@@ -1056,7 +1056,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
           toolBudget: mcpToolBudget(learnedToolCountLimit(toolLimitKey), support.engineTools ?? 32) });
         support.applyTurnEnv?.(env, {
           model: resolvedModel, requestedModel: turn.model, fullAuto: turnConfig.fullAuto === true, botId: turn.botId, cwd, toolScope: turn.toolScope,
-          threadId, mcpServers,
+          threadId, mcpServers, openCodeAgentPrompt: turn.openCodeAgentPrompt,
         });
         let cliTurn =
           resolvedModel !== undefined && resolvedModel !== turn.model
@@ -1599,7 +1599,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
             if (err) {
               const failure = err as NodeJS.ErrnoException & { killed?: boolean };
               const reason = failure.code === "ENOENT"
-                ? `\`${config.cli}\` isn't installed, or isn't on this app's PATH. Install it for the user running OpenMausBot or use Set CLI, then check again.`
+                ? `\`${config.cli}\` isn't installed, or isn't on this app's PATH. Install it for the user running RanzoBot or use Set CLI, then check again.`
                 : failure.code === "EACCES" || failure.code === "EPERM"
                   ? `\`${config.cli}\` isn't executable. Check its file permissions, then check again.`
                   : failure.killed && failure.code == null

@@ -9,18 +9,12 @@ The existing **Actions → Release → Run workflow** button remains available f
 reruns and recovery. It
 builds macOS (arm64 + x64, signed, notarized, stapled), Windows, and Ubuntu
 from a single pinned commit, verifies every artifact the way a user would
-receive it, and assembles the canonical draft in
-[OpenMausBot releases](https://github.com/milind-soni/OpenMausBot/releases).
-The exact same assets are also staged in the public legacy releases repo so
-installed builds from 0.1.46 and earlier can update across the repository
-migration.
+receive it, and assembles a draft in
+[vericsont/RanzoBot releases](https://github.com/vericsont/RanzoBot/releases).
 
-Tick **publish** to publish and verify the canonical release first, then make
-the identical legacy updater bridge visible. Leave it unticked to review the
-canonical draft; when you publish that draft in GitHub's UI, the **Sync
-published release** workflow
-verifies and publishes its legacy mirror automatically. Never publish only the
-legacy draft.
+Tick **publish** to publish the release immediately. Leave it unticked to
+review the draft; when you publish it in GitHub's UI, the **Verify published
+release** workflow checks the updater assets and feed hashes.
 
 The release commit must have passed CI on every platform: the **CI passed on
 the release commit** job waits (while the platforms build) for a ci.yml run
@@ -47,23 +41,16 @@ Configure the optional Vercel hook below to rebuild the docs immediately after
 publication; otherwise the live cache or the next normal docs deployment
 refreshes it.
 
-## Updater migration invariant
+## Updater target
 
-`app-update.yml` is baked into every packaged desktop app. Builds through
-0.1.46 point to `milind-soni/openmausbot-releases`; newer builds point to
-`milind-soni/OpenMausBot`. For that reason:
+`app-update.yml` is baked into every packaged desktop app and points to the
+public `vericsont/RanzoBot` releases. Each release must include the platform
+feed files and the artifacts they reference. Existing builds keep their baked-in
+feed; installing a build from this fork is required to switch an installation
+to these releases.
 
-1. Every new release is published byte-for-byte to both repositories during
-   the bridge period.
-2. `openmausbot-releases` must stay public. Do not delete its final bridge
-   release, feeds, or assets.
-3. README and docs downloads point at the canonical repo, while the legacy
-   mirror exists only for installed updater clients and historical releases.
-
-The npm package is published separately and its versioned `.tgz` is attached
-only to the canonical release. It is not a desktop updater artifact; the
-mirror checks permit that one extra file while still verifying the complete,
-byte-identical desktop asset set.
+The npm package is published separately. Its `.tgz` is not a desktop updater
+artifact.
 
 ## Why the gates exist
 
@@ -86,7 +73,7 @@ must fail the build, not ship an installer that downloads them on first use.
 
 ## One-time setup: release secrets
 
-Set these in **OpenMausBot → Settings → Secrets and variables → Actions**.
+Set these in **RanzoBot → Settings → Secrets and variables → Actions**.
 
 The **Prepare next release** workflow also needs
 **Settings → Actions → General → Workflow permissions → Allow GitHub Actions
@@ -95,12 +82,10 @@ version PR; it never approves or merges it.
 
 ### 1. `MAC_CERT_P12_BASE64` + `MAC_CERT_PASSWORD`
 
-The Developer ID Application certificate, exported from the Mac that
-currently signs releases:
+Your Developer ID Application certificate, exported from Keychain Access as
+a `.p12` with a strong password:
 
 ```sh
-# Keychain Access → My Certificates → "Developer ID Application: Milind Soni
-# (993D98NH4J)" → right-click → Export… → .p12 with a strong password, then:
 base64 -i DeveloperID.p12 | pbcopy   # → MAC_CERT_P12_BASE64
 # the export password             → MAC_CERT_PASSWORD
 ```
@@ -118,16 +103,7 @@ password for CI — revocable, scoped, no 2FA dance):
 base64 -i AuthKey_XXXXXXXX.p8 | pbcopy   # → APPLE_API_KEY_P8_BASE64
 ```
 
-### 3. `RELEASES_PAT`
-
-A fine-grained personal access token that lets the workflow write to the
-legacy updater mirror: **GitHub → Settings → Developer settings →
-Fine-grained tokens** → repository access: only `openmausbot-releases` →
-permissions: **Contents: Read and write**. Set a long expiry and a calendar
-reminder. The canonical release uses the workflow's scoped `GITHUB_TOKEN` and
-does not need a PAT.
-
-### 4. Optional `DOCS_DEPLOY_HOOK_URL`
+### 3. Optional `DOCS_DEPLOY_HOOK_URL`
 
 In Vercel, open the docs project and create a **Deploy Hook** for its production
 branch. Store that private URL as the `DOCS_DEPLOY_HOOK_URL` repository secret.
@@ -140,7 +116,6 @@ The hand-cut path still works when Actions is down or a release needs
 surgery: `pnpm package:mac`, gate with `codesign --verify --deep --strict`,
 notarize with the local keychain profile (`xcrun notarytool submit …
 --keychain-profile AC_PASSWORD`), staple, re-zip, regenerate blockmaps and
-`node scripts/regenerate-mac-feed.mjs`, upload the identical complete asset set
-to both repositories, publish and verify the canonical release before the
-legacy mirror, and always verify the published bytes against the published feed
-by downloading them back.
+`node scripts/regenerate-mac-feed.mjs`, upload the complete asset set to the
+fork release, and verify the published bytes against the published feed by
+downloading them back.

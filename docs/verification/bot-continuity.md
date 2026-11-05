@@ -12,8 +12,11 @@ turns, and checks the prompt and model delivered to the provider boundary:
 
 - A named bot with no description or SOUL can receive a normal work request
   without the setup interview or its "Wait for a yes" instruction.
-- `/setup Help me track garden watering` explicitly enables coaching; the next
-  ordinary request disables it, even if no profile card was confirmed.
+- `/setup Help me track garden watering` explicitly enables setup; it uses
+  known details and defaults rather than starting a fixed interview. The next
+  ordinary request disables setup, even if no profile card was confirmed.
+- Direct and room prompts ask the bot to work independently and not confirm
+  each step, while retaining authorization and secret-handling boundaries.
 - A pinned thread's model change with `updateBotDefault: true` updates that
   thread and the bot default used by groups and future threads. It does not
   change a selected sibling, other saved model choices, or approval levels.

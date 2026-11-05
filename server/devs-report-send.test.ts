@@ -5,7 +5,7 @@ import { askReportStatus, bugReportEndpoint, bugReportsHomeSignature, bugReportS
 
 const PAYLOAD: DevsReportPayload = {
   installId: "4b7c1f2e-0a9d-4c2b-9f1e-6d5a4b3c2d1e", source: "bot", description: "it broke", appVersion: "0.1.128", platform: "darwin arm64, desktop app",
-  diagnostics: "OpenMausBot @devs report", contactEmail: "ada@example.com", contact: "ada@example.com",
+  diagnostics: "RanzoBot @devs report", contactEmail: "ada@example.com", contact: "ada@example.com",
 };
 
 function endpoint(...answers: Array<Response | Error>) {

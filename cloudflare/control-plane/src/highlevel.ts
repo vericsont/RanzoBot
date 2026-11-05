@@ -292,11 +292,11 @@ function page(title: string, text: string, status = 200): Response {
 }
 
 const PAGES = {
-  connected: () => page("Connected", "Close this tab and go back to OpenMausBot."),
-  cancelled: () => page("Connection cancelled", "Go back to OpenMausBot and try again when you are ready."),
-  expired: () => page("Connection expired", "This link is no longer valid. Go back to OpenMausBot and try again.", 400),
-  failed: () => page("Connection failed", "Go back to OpenMausBot and try again.", 502),
-  unavailable: () => page("Connection failed", "Go back to OpenMausBot and try again.", 503),
+  connected: () => page("Connected", "Close this tab and go back to RanzoBot."),
+  cancelled: () => page("Connection cancelled", "Go back to RanzoBot and try again when you are ready."),
+  expired: () => page("Connection expired", "This link is no longer valid. Go back to RanzoBot and try again.", 400),
+  failed: () => page("Connection failed", "Go back to RanzoBot and try again.", 502),
+  unavailable: () => page("Connection failed", "Go back to RanzoBot and try again.", 503),
 };
 
 interface FlowRow {

@@ -1,4 +1,4 @@
-# OpenMausBot threat model
+# RanzoBot threat model
 
 Guidance for automated security scanning (Anthropic OSS Scanner). The scope
 notes in `/src/SECURITY.md` and the documents named below describe the same
@@ -8,7 +8,7 @@ product decisions.
 
 ## What this project is
 
-OpenMausBot runs AI agents, called **bots**, on a person's own computer or
+RanzoBot runs AI agents, called **bots**, on a person's own computer or
 server. A bot is a conversation plus settings that drives an **engine**: a
 real agent CLI (Claude Code, Codex, Grok, Gemini, Cursor, OpenCode, ACP
 agents) or an API-key chat-completions provider. Engines run as child
@@ -23,7 +23,7 @@ The same TypeScript **harness server** (`server/`) runs in four places:
 - **Hosted or shared workspaces.** Several people sign in to one server
   (email sign-in, members, `openmausbot fleet`). Members and roles live in
   `enterprise/`, and the hook point is `server/enterprise.ts`.
-- **MausBot Cloud home.** Each customer gets one Fly app with one machine
+- **RanzoBot Cloud home.** Each customer gets one Fly app with one machine
   (the `cloud-home` stage of the root `Dockerfile`, plus `deploy/fly/`). Caddy
   terminates TLS, and the server stays on loopback. See `docs/cloud-pro.md`.
 
@@ -97,7 +97,7 @@ Bots have tools:
    - Every connection a bot's Chrome makes goes through a SOCKS5 gate on
      loopback. The gate resolves names itself and checks every address before
      it connects.
-   - These are always refused, on every host: OpenMausBot's own ports,
+   - These are always refused, on every host: RanzoBot's own ports,
      link-local addresses, cloud metadata (`169.254.169.254`,
      `fd00:ec2::254`, `100.100.100.200`) and reserved ranges.
    - The local network (including `fc00::/7`, which holds Fly's private
@@ -157,7 +157,7 @@ These are deliberate product decisions. Do not report them.
   `shared/approval-mode.ts`). At Full access each engine runs in its own most
   permissive mode. Where an engine has no such mode, the harness answers the
   permission requests it leaves.
-- **OpenMausBot adds no approval prompts of its own.** Approvals belong to
+- **RanzoBot adds no approval prompts of its own.** Approvals belong to
   each engine's native permission system, at the level the person picked.
   When a bot changes its own routines, skills, webhooks, profile or model,
   the change applies at once and the conversation gets a receipt with Undo,
@@ -287,7 +287,7 @@ These are deliberate product decisions. Do not report them.
 - **Out of scope:**
   - `apps/docs/` (the documentation site), `evals/`, and test fixtures under
     `server/testing/`;
-  - `third_party/` (vendored upstream code), unless OpenMausBot's own use of
+  - `third_party/` (vendored upstream code), unless RanzoBot's own use of
     it creates the issue;
   - the mobile apps and the Cloud Admin, which live in other repositories;
   - CI workflows under `.github/`.

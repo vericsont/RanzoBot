@@ -61,6 +61,7 @@ export function settingsTurnFields(cfg: AppConfig, dataDir: string, restrictsMcp
   userSkillsDir?: string;
   mcpCallTimeoutMs: number;
   toolErrorCorrectiveRounds: number;
+  openCodeAgentPrompt?: string;
 } {
   const userSkillsDir = claudeUserSkillsEnabled(cfg) ? claudeUserSkillsDir(dataDir, home) : null;
   if (!claudeUserSkillsEnabled(cfg)) forgetClaudeUserSkillsDir(dataDir);
@@ -69,5 +70,6 @@ export function settingsTurnFields(cfg: AppConfig, dataDir: string, restrictsMcp
     ...(userSkillsDir ? { userSkillsDir } : {}),
     mcpCallTimeoutMs: mcpCallTimeoutMinutes(cfg) * 60_000,
     toolErrorCorrectiveRounds: correctiveRounds(cfg),
+    ...(cfg.prompts?.opencode?.trim() ? { openCodeAgentPrompt: cfg.prompts.opencode.trim() } : {}),
   };
 }

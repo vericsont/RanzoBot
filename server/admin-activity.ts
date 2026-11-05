@@ -190,7 +190,10 @@ export function valueAt(source: unknown, path: string): unknown {
 }
 
 const pick = (source: unknown, paths: readonly string[]) =>
-  Object.fromEntries(paths.map((path) => [path, valueAt(source, path) ?? null]));
+  Object.fromEntries(paths.map((path) => {
+    const value = valueAt(source, path);
+    return [path, path.startsWith("prompts.") && typeof value === "string" ? textDigest(value) : value ?? null];
+  }));
 
 const CONFIG_CATEGORY: Record<string, AdminActivityCategory> = {
   signIn: "people",

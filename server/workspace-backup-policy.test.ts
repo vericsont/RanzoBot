@@ -25,6 +25,12 @@ describe("workspace backup data boundary", () => {
     expect(restored.instances).toBe(connections.instances);
   });
 
+  it("includes workspace prompt settings in a backup", () => {
+    const prompts = { bot: "Work independently", opencode: "Be concise" };
+    expect(portableWorkspaceConfig({ prompts })).toEqual({ prompts });
+    expect(restoredWorkspaceConfig({ prompts }, {}).prompts).toEqual(prompts);
+  });
+
   it("leaves the helper model with the destination: a restored backup never names one and never clears the destination's", () => {
     // it names one of this machine's provider instances, and switching it on sends bots' text to that provider
     const portable = portableWorkspaceConfig({ helper: { instanceId: "claude" }, language: "ja" });

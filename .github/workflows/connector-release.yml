@@ -1,6 +1,6 @@
 name: Connector image
 
-# The MausBot connector (connector/), published with every OpenMausBot release as
+# The RanzoBot connector (connector/), published with every RanzoBot release as
 # ghcr.io/milind-soni/mausbot-connector for linux/amd64 and linux/arm64. The
 # Admin pins it by digest; the summary prints it. Only a release tag publishes:
 # no pull request starts this, and a manual run on a branch builds nothing.

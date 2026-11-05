@@ -643,7 +643,7 @@ test("a team on screen signs in again before its hour ends, without moving the p
   assert.deepEqual(w.teamPairs, ["team-acme"], "not before its time");
   await w.later(1);
   assert.deepEqual(w.teamPairs, ["team-acme", "team-acme"]);
-  assert.deepEqual(w.redeemed, [["team", { code: "TTTT-EEEE-AAAA", cookie: true, label: "OpenMausBot app" }]]);
+  assert.deepEqual(w.redeemed, [["team", { code: "TTTT-EEEE-AAAA", cookie: true, label: "RanzoBot app" }]]);
   assert.equal(w.went.length, went, "the page never moved");
   assert.equal(w.pairs, 0, "never My Cloud's pairing");
   await w.later(TEAM_RENEW_MS);

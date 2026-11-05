@@ -191,7 +191,7 @@ describe("drawing a widget", () => {
     act(() => find<HTMLButtonElement>(`button[title="${t("attach.externalHidden")}"]`)!.click());
     const image = find<HTMLImageElement>("img")!;
     expect(image.getAttribute("src")).toBe("https://mausbot.com/og.png");
-    expect(image.getAttribute("alt")).toBe("MausBot");
+    expect(image.getAttribute("alt")).toBe("RanzoBot");
     expect(image.getAttribute("loading")).toBe("lazy");
     expect(image.getAttribute("referrerpolicy")).toBe("no-referrer");
     expect(Number.parseFloat(image.style.aspectRatio)).toBeCloseTo(16 / 9);

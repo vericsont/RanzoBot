@@ -15,7 +15,7 @@ import { useStore, type Bot } from "@/state/store";
 import { BOT_PROFILE_LIMITS } from "../../shared/bot-profile";
 import { BotAvatar } from "./Avatar";
 import { useAvatarImage } from "./avatar-editing";
-import { MausBotCustomize } from "./MausBotCustomize";
+import { RanzoBotCustomize } from "./RanzoBotCustomize";
 import { usePrefersReducedMotion } from "./mascot-clock";
 
 const LOOK = ["name", "color", "mascotBody", "avatarUrl", "avatarCrop", "avatarZoom", "avatarFocusX", "avatarFocusY"] as const;
@@ -31,7 +31,7 @@ export function draftOf(bot: Bot): WelcomeDraft {
 }
 
 /** What either choice saves, as the bot's own edit screen would: what the person changed, and that they chose. Add puts
- * MausBot at the top of the sidebar; Not now turns "Show MausBot in the sidebar" off. */
+ * RanzoBot at the top of the sidebar; Not now turns "Show RanzoBot in the sidebar" off. */
 export function welcomePatch(bot: Bot, draft: WelcomeDraft, add: boolean): Partial<Bot> {
   const was = draftOf(bot);
   const now: WelcomeDraft = { ...draft, name: welcomeName(draft.name) };
@@ -44,10 +44,10 @@ export function mausBotWelcomeDue(input: { bot: Pick<Bot, "welcomed" | "hidden">
   return Boolean(input.bot && !input.bot.welcomed && !input.bot.hidden && !input.onboardingDue && !input.welcomeOpen && !input.tourOpen);
 }
 
-/** MausBot's first-launch card is due now (mausBotWelcomeDue), and, like the Cloud Pro popup and the product-updates
+/** RanzoBot's first-launch card is due now (mausBotWelcomeDue), and, like the Cloud Pro popup and the product-updates
  * question, waits for the first reply (unknown until the bots load), for a launch after the one whose welcome finished, and
  * for a launch the notices queue has not already used. The notices queue asks this too, so the card goes first. */
-export function useMausBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot | undefined; due: boolean } {
+export function useRanzoBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot | undefined; due: boolean } {
   const { state } = useStore();
   const bot = myDefaultBot(state.bots, useViewerEmail());
   // The app tour runs only when Settings starts it; one never taken does not hold this back.
@@ -61,9 +61,9 @@ export function useMausBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot |
   return { bot, due };
 }
 
-export function MausBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
+export function RanzoBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
   const { state } = useStore();
-  const { bot, due: ready } = useMausBotWelcomeDue(viewer);
+  const { bot, due: ready } = useRanzoBotWelcomeDue(viewer);
   const [shownFor, setShownFor] = useState<string | null>(null);
   const [closed, setClosed] = useState(false);
   const due = !closed && ready;
@@ -79,10 +79,10 @@ export function MausBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
   }, [shownFor, closed]);
   const shown = shownFor && !closed ? state.bots.find((candidate) => candidate.id === shownFor) : undefined;
   if (!shown) return null;
-  return createPortal(<MausBotWelcomeCard bot={shown} onClose={() => setClosed(true)} />, document.body);
+  return createPortal(<RanzoBotWelcomeCard bot={shown} onClose={() => setClosed(true)} />, document.body);
 }
 
-export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => void }) {
+export function RanzoBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => void }) {
   const { dispatch } = useStore();
   const advanced = useAdvancedMode();
   const reduced = usePrefersReducedMotion();
@@ -192,7 +192,7 @@ export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => 
         >
           <div className="min-h-0 overflow-hidden">
             <div className="pt-4">
-              <MausBotCustomize preview={preview} name={draft.name} nameRef={nameRef} image={image} onName={(next) => edit({ name: next })} onPatch={edit} />
+              <RanzoBotCustomize preview={preview} name={draft.name} nameRef={nameRef} image={image} onName={(next) => edit({ name: next })} onPatch={edit} />
             </div>
           </div>
         </div>

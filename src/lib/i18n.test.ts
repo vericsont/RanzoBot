@@ -50,7 +50,7 @@ describe("t", () => {
   it("uses the product name without renaming the upstream cloud service", () => {
     expect(t("pro.disclaimer")).toContain("RanzoBot");
     expect(t("settings.talk.title")).toContain("RanzoBot");
-    expect(t("pro.name")).toBe("MausBot Cloud");
+    expect(t("pro.name")).toBe("RanzoBot Cloud");
     setLocale("de");
     expect(t("pro.disclaimer")).toContain("RanzoBot");
   });

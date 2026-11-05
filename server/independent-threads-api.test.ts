@@ -244,7 +244,7 @@ describe("independent bot tasks through the isolated control surface", () => {
     writeFileSync(modelFile(models[1], "gate"), "finish");
     await expect.poll(() => handoff()?.status, { timeout: 20_000 }).toBe("completed");
     const result: string = handoff()!.result;
-    expect(result.startsWith("[OpenMausBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run. Do not report it as done;")).toBe(true);
+    expect(result.startsWith("[RanzoBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run. Do not report it as done;")).toBe(true);
     expect(result).toContain("reply to:");
     expect(result).not.toContain("git push");
     expect(result).not.toContain("npm run lint");
@@ -291,7 +291,7 @@ describe("independent bot tasks through the isolated control surface", () => {
     // whole, so the engine never reads the gate half-written
     writeFileSync(`${modelFile(models[1], "gate")}.tmp`, ending);
     renameSync(`${modelFile(models[1], "gate")}.tmp`, modelFile(models[1], "gate"));
-    const note = "[OpenMausBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run.";
+    const note = "[RanzoBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run.";
     const runMessages = async () => (await api("GET", `/api/threads/${await runThread()}/messages?limit=100`)).body.messages as any[];
     const reported = async () => (await runMessages()).find((message: any) => message.roomRequest?.id === requestId && message.roomRequest.phase === "result")?.tool;
     if (ending === "finish") {
@@ -338,7 +338,7 @@ describe("independent bot tasks through the isolated control surface", () => {
     rmSync(expiry, { force: true });
     writeFileSync(modelFile(models[1], "gate"), "finish");
     await expect.poll(() => handoff()?.status, { timeout: 20_000 }).toBe("completed");
-    expect(handoff()!.result.startsWith("[OpenMausBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run.")).toBe(true);
+    expect(handoff()!.result.startsWith("[RanzoBot: nobody answered the approval for “Bash: npm run release-check” in time, so it did not run.")).toBe(true);
   }, 60_000);
 
   it("ends a one-way notice whose recipient thread was deleted before it started, without restarting the sender", async () => {

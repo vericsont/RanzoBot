@@ -14,7 +14,7 @@ const IN_CHUNK = 500;
 export interface TeamPrivacy {
   /** The conversations that are one member's alone. */
   threads: ReadonlySet<string>;
-  /** Each member's own MausBot: everything of it is theirs. */
+  /** Each member's own RanzoBot: everything of it is theirs. */
   bots: ReadonlySet<string>;
   /** Files in attachments/ only those conversations, or a member's unsent uploads, use. */
   attachments: ReadonlySet<string>;
@@ -167,4 +167,4 @@ export function stripTeamPrivate(snapshot: { messages: string; runtime: string }
   });
 }
 
-export const TEAM_PRIVATE_NOTE = "Members' private chats are theirs alone and are not in this export: their conversations, what bots remember from them, their own MausBot and their About you stay out.";
+export const TEAM_PRIVATE_NOTE = "Members' private chats are theirs alone and are not in this export: their conversations, what bots remember from them, their own RanzoBot and their About you stay out.";

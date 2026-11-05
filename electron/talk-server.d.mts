@@ -7,7 +7,7 @@ export declare class TalkServerError extends Error {
   constructor(code: TalkServerErrorCode);
   readonly code: TalkServerErrorCode;
 }
-/** MausBot's Quick asks chat on this computer's server. */
+/** RanzoBot's Quick asks chat on this computer's server. */
 export interface TalkChat { botId: string; threadId: string }
 /** `text` is the reply as last shown: the streamed words, then the finished message. */
 export type TalkUpdate =
@@ -16,8 +16,8 @@ export type TalkUpdate =
   | { kind: "needs-you" }
   | { kind: "done"; ok: boolean; text: string };
 export interface TalkBot { id: string; defaultBot?: { person?: string }; chiefOfStaff?: boolean; hidden?: boolean }
-/** This computer's own MausBot (not a Team Cloud member's), else the Chief of Staff. */
-export declare function findMausBot<T extends TalkBot>(bots: readonly T[]): T | null;
+/** This computer's own RanzoBot (not a Team Cloud member's), else the Chief of Staff. */
+export declare function findRanzoBot<T extends TalkBot>(bots: readonly T[]): T | null;
 /** Server-sent events whose data is JSON; `signal` cancels the stream. */
 export declare function readFrames(body: ReadableStream<Uint8Array>, onFrame: (frame: object) => void, signal?: AbortSignal): Promise<void>;
 /** Follows the frames of one ask: from its own echoed message, through the turn that answers it. That turn is the

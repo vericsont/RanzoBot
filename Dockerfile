@@ -1,4 +1,4 @@
-# OpenMausBot harness server — hosted/self-hosted tenant image, and the
+# RanzoBot harness server — hosted/self-hosted tenant image, and the
 # OMB Cloud Pro home machine (docs/cloud-pro.md).
 #
 # Build the renderer + the self-contained server bundle, then ship only those
@@ -17,7 +17,7 @@
 #   docker buildx build --platform linux/arm64 -t openmausbot .   # Raspberry Pi 4/5, ARM servers
 #
 # HOME is the /data volume, so engine CLI logins (~/.claude, ~/.codex, ~/.grok,
-# ...) and OpenMausBot's own state (~/.openmausbot) persist across container
+# ...) and RanzoBot's own state (~/.openmausbot) persist across container
 # restarts.
 #
 # A plain `docker run` of either image wants `--init --shm-size=512m`, as the

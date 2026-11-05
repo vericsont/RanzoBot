@@ -95,7 +95,7 @@ export function createCleanWorkspace({ dataDir, running, swap, allowed = () => t
     async holding(work) {
       held++;
       try {
-        if (!(await leave())) throw new Error("OpenMausBot on this computer could not go back to its own copy yet.");
+        if (!(await leave())) throw new Error("RanzoBot on this computer could not go back to its own copy yet.");
         return await work();
       } finally { held--; }
     },

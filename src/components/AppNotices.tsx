@@ -26,7 +26,7 @@ import { LinkButton, NoticeCard, NotNowButton } from "./NoticeCard";
 import { useDesktopNotices, useOtherDialogOpen } from "./notice-dialogs";
 import { localDesktopPage } from "./onboarding/WelcomeGate";
 import { UpdatesConsentDialog, updatesConsentBridge, useUpdatesConsent } from "./UpdatesConsent";
-import { useMausBotWelcomeDue } from "./MausBotWelcome";
+import { useRanzoBotWelcomeDue } from "./RanzoBotWelcome";
 import { reportSimpleModePrompt, SimpleModePrompt } from "./SimpleModePrompt";
 import { TwoPlacesCard } from "./TwoPlacesCard";
 
@@ -78,7 +78,7 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   const updater = useUpdaterState();
   const intent = useCloudIntent();
   const moving = useMoveQuiet(now);
-  const mausBot = useMausBotWelcomeDue(viewer);
+  const mausBot = useRanzoBotWelcomeDue(viewer);
   // Bots in two places: this computer's page only, where main knows what lives here.
   const two = useTwoPlaces();
   const twoFact = !local || two.suggest === null ? false : two.suggest === undefined ? null : true;
@@ -118,7 +118,7 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   const kind = view ? cloudNoticeKind(view, account) : null;
   const cards = Boolean(bridge || planBridge);
   const firstChat = firstReplyPending(state);
-  // MausBot's first-launch card goes first: the popup and the question wait while it is due. The popup skips a launch the
+  // RanzoBot's first-launch card goes first: the popup and the question wait while it is due. The popup skips a launch the
   // card used; the question may follow the card once it closes, as it follows the popup.
   const afterWelcome = welcomeFinishedThisLaunch() || launchDialogShown() === "mausbot" || firstChat;
   const consentWaits = welcomeFinishedThisLaunch() || firstChat;
@@ -161,7 +161,7 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   useEffect(() => {
     if (!shownKey || !notice) return;
     markLaunchNotice(notice);
-    // The popups and the question own this launch: MausBot's first-launch card waits for a later one.
+    // The popups and the question own this launch: RanzoBot's first-launch card waits for a later one.
     if (shownKey === GROK_MOVE_NOTICE || shownKey === SIMPLE_MODE_NOTICE || shownKey === UPDATES_CONSENT_NOTICE) markLaunchDialog("notices");
     if (notice === CLOUD_TRIAL_NOTICE && trialOpen !== shownKey) {
       setTrialOpen(shownKey);

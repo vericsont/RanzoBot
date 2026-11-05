@@ -41,7 +41,7 @@ export interface ChatToolSession {
   trimmed: TrimmedChatMcpServer[];
   budget: ToolBudget;
   validate(name: string, args: unknown): void;
-  /** Directory reads and OpenMausBot's own agents server need no card; call_tool shows the tool it runs. */
+  /** Directory reads and RanzoBot's own agents server need no card; call_tool shows the tool it runs. */
   view(name: string, args: Record<string, unknown>): ChatToolCallView;
   execute(name: string, args: Record<string, unknown>, signal: AbortSignal): Promise<ChatToolResult>;
   close(): Promise<void>;

@@ -75,6 +75,13 @@ describe("what a row records", () => {
       .toEqual({ "instances.grok.environment": { KEY: "[hidden]" }, "box.token": "[hidden]", "rooms.maxTokens": 9 });
   });
 
+  it("records prompt changes without retaining their text", () => {
+    const rows = configChangeRows({ prompts: { bot: "private before" } }, { prompts: { bot: "private after", opencode: "another private prompt" } });
+    expect(rows[0]!.changed).toEqual(["prompts.bot", "prompts.opencode"]);
+    expect(JSON.stringify(rows)).not.toContain("private");
+    expect(rows[0]!.after?.["prompts.bot"]).toMatchObject({ length: 13 });
+  });
+
   it("names each key saved for an OpenCode provider, never its value", () => {
     const rows = configChangeRows({ opencodeGo: { apiKey: "" } }, {
       opencodeGo: { apiKey: "", providerKeys: { VENICE_API_KEY: "venice-secret", GROQ_TOKEN: "groq-secret", DEEPSEEK_KEY: "deepseek-secret" } },

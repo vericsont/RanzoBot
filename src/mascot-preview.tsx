@@ -294,7 +294,7 @@ function Preview() {
       <header className="preview-header">
         <div>
           <p className="eyebrow">Morphing face engine · 25 expressions · 39 states</p>
-          <h1>Maus motion library</h1>
+          <h1>RanzoBot motion library</h1>
           <p className="intro">
             The app&rsquo;s lit body with the face engine behind it. Expressions morph on a
             spring, blink on each state&rsquo;s own rhythm, and the eyes wrap around an implied
@@ -338,7 +338,7 @@ function Preview() {
             <p className="eyebrow">Identity system · 100 combinations</p>
             <h2 id="expression-heading">Colors and states</h2>
           </div>
-          <p>Move your pointer over any Maus to test the responsive eyes.</p>
+          <p>Move your pointer over any RanzoBot mascot to test the responsive eyes.</p>
         </div>
 
         <div className="matrix-wrap">

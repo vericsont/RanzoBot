@@ -914,7 +914,7 @@ export class BrowserRuntime {
     gate.closing = true;
     this.changed(gate);
     try {
-      if (!await closeBrowser()) throw new Error("The browser could not be closed. Ask the person to press Restart in the Browser panel of OpenMausBot on their computer, or to restart OpenMausBot.");
+      if (!await closeBrowser()) throw new Error("The browser could not be closed. Ask the person to press Restart in the Browser panel of RanzoBot on their computer, or to restart RanzoBot.");
       this.steps?.forget(session);
       this.launch?.stopped(session);
       await this.clients.get(session)?.client.stop();

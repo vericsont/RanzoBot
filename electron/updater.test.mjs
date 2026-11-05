@@ -16,7 +16,7 @@ const CLOUD = "https://home-7f3k2.fly.dev";
 const OTHER = "https://bots.example.test";
 const OWN = "https://omb-c-a.fly.dev";
 
-const fixture = vi.hoisted(() => ({ appName: "OpenMausBot", autoUpdater: null, handlers: new Map() }));
+const fixture = vi.hoisted(() => ({ appName: "RanzoBot", autoUpdater: null, handlers: new Map() }));
 
 vi.mock("electron", () => ({
   app: { isPackaged: true, getName: () => fixture.appName, getPath: () => "/unused-updater-test-log", getVersion: () => "1.0.0", hide: vi.fn() },
@@ -120,7 +120,7 @@ const settle = async () => {
 };
 
 beforeEach(() => {
-  fixture.appName = "OpenMausBot";
+  fixture.appName = "RanzoBot";
   localOriginModule.setLocalOrigin(LOCAL);
   vi.useFakeTimers();
 });
@@ -216,12 +216,12 @@ it("another Cloud of the person's own gets the update bridge as My Cloud's page 
   expect(has(OWN, "own")).toBe(false);
 });
 
-it("does not check upstream releases for RanzoBot", async () => {
+it("checks GitHub releases for RanzoBot", async () => {
   fixture.appName = "RanzoBot";
   const { updater, autoUpdater } = await load(() => false);
   updater.startUpdater();
   await vi.advanceTimersByTimeAsync(15_000);
-  expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
+  expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(1);
 });
 
 it("a downloaded update installs when the app quits, except a system package, which is the person's to install", async () => {
@@ -233,7 +233,7 @@ it("a downloaded update installs when the app quits, except a system package, wh
     for (const [os, marker, image, installsOnQuit] of [
       ["darwin", null, null, true],
       ["win32", null, null, true],
-      ["linux", null, "/home/a/OpenMausBot.AppImage", true],
+      ["linux", null, "/home/a/RanzoBot.AppImage", true],
       ["linux", "deb", null, false],
       ["linux", "rpm", null, false],
     ]) {
@@ -267,7 +267,7 @@ it("a downloaded update installs by itself at a quiet moment on macOS and Window
     for (const [os, marker, image, installs] of [
       ["darwin", null, null, true],
       ["win32", null, null, true],
-      ["linux", null, "/home/a/OpenMausBot.AppImage", false],
+      ["linux", null, "/home/a/RanzoBot.AppImage", false],
       ["linux", "deb", null, false],
       ["linux", "rpm", null, false],
     ]) {

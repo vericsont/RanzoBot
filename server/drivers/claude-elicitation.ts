@@ -53,8 +53,8 @@ export function claudeElicitations(write: (frame: unknown) => Promise<boolean>, 
         emit({
           type: "runtime.notice",
           message: r.mode === "url"
-            ? `${server} asked you to open a link to continue${/^https:\/\//i.test(url) ? `: ${url}` : ""}. OpenMausBot can't open it from here, so the request was declined. Open the link yourself, then ask the bot to try again.`
-            : `${server} asked you to fill in ${fields === 1 ? "a field" : `${fields} fields`}${message ? ` ("${message}")` : ""}. OpenMausBot can't show that form yet, so the request was declined.`,
+            ? `${server} asked you to open a link to continue${/^https:\/\//i.test(url) ? `: ${url}` : ""}. RanzoBot can't open it from here, so the request was declined. Open the link yourself, then ask the bot to try again.`
+            : `${server} asked you to fill in ${fields === 1 ? "a field" : `${fields} fields`}${message ? ` ("${message}")` : ""}. RanzoBot can't show that form yet, so the request was declined.`,
         });
         return true;
       }

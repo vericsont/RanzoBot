@@ -6,13 +6,14 @@ import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
 import { waitForExit } from "./testing/cleanup.ts";
+import { OPENCODE_AGENT_PROMPT } from "./drivers/acp/opencode-go.ts";
 
 // Deliberate opt-in: never discover the user's CLI. The supplied OpenCode 2 binary reaches only an owned loopback
 // stand-in for the Copilot API, through a synthetic credential imported into the disposable home.
 const cli = process.env.OMB_OPENCODE2_E2E_CLI;
 const test = cli ? it : it.skip;
 
-type Receipt = { endpoint: string; model?: string; marker?: string; effort?: string };
+type Receipt = { endpoint: string; model?: string; marker?: string; effort?: string; autonomousPrompt: boolean; nativePrompt: boolean; customNativePrompt: boolean };
 
 const copilotModel = (id: string, endpoints: string[], supports: Record<string, unknown>) => ({
   id, name: id, version: `${id}-2026-09-01`, model_picker_enabled: true, supported_endpoints: endpoints,
@@ -73,7 +74,12 @@ test("offers Copilot models' efforts through OpenCode 2 and sends each turn's ch
     const effort = body.reasoning?.effort ?? body.output_config?.effort ?? body.reasoning_effort;
     // Retain only synthetic markers and selection metadata, never complete prompts.
     const marker = [...JSON.stringify(body.input ?? body.messages ?? []).matchAll(/EFFORT_TURN_\d+/g)].at(-1)?.[0];
-    receipts.push({ endpoint: req.url!, model: body.model, marker, effort });
+    const autonomousPrompt = JSON.stringify(body).includes("Work independently: inspect available context and tools");
+    const nativeMessages = (body.input ?? body.messages ?? []).filter((entry: any) => entry.role === "system" || entry.role === "developer");
+    const system = JSON.stringify([body.instructions, body.system, nativeMessages]);
+    const nativePrompt = system.includes(OPENCODE_AGENT_PROMPT);
+    const customNativePrompt = system.includes("FIXTURE_CUSTOM_OPENCODE_PROMPT") && system.includes("Respect permissions and explicit authorization");
+    receipts.push({ endpoint: req.url!, model: body.model, marker, effort, autonomousPrompt, nativePrompt, customNativePrompt });
     res.writeHead(200, { "content-type": "text/event-stream" });
     res.end(reply(req.url!, body.model, `fixture-ok:${effort ?? "omitted"}`));
   });
@@ -187,8 +193,12 @@ test("offers Copilot models' efforts through OpenCode 2 and sends each turn's ch
       expect((await control(["send", "--bot", bot.id, "--task", task, "--text", `${marker} Reply without using tools.`])).success).toBe(true);
       expect((await control(["wait", "--bot", bot.id, "--task", task, "--timeout", "45"])).status).toBe("settled");
       expect(receipts.slice(before).filter((receipt) => receipt.marker === marker)).toEqual(expect.arrayContaining([
-        { endpoint, model: model.slice(model.indexOf("/") + 1), marker, effort: variant },
+        expect.objectContaining({ endpoint, model: model.slice(model.indexOf("/") + 1), marker, effort: variant }),
       ]));
+      if (turnNumber === 1) {
+        expect(receipts.slice(before).some((receipt) => receipt.marker === marker && receipt.autonomousPrompt)).toBe(true);
+        expect(receipts.slice(before).some((receipt) => receipt.marker === marker && receipt.nativePrompt)).toBe(true);
+      }
       // Native title requests carry their own effort, so the conversation's own answer is what proves the turn's.
       const transcript = await control(["messages", "--bot", bot.id, "--task", task, "--limit", "20"]);
       const answer = transcript.messages.filter((message: any) => message.role === "bot" && message.kind === "text").at(-1);
@@ -198,6 +208,12 @@ test("offers Copilot models' efforts through OpenCode 2 and sends each turn's ch
     await turn(gpt, "low", "/responses");
     await turn(claude, "medium", "/v1/messages");
     await turn(plain, undefined, "/chat/completions");
+    await api("PATCH", "/api/config", { prompts: { opencode: "FIXTURE_CUSTOM_OPENCODE_PROMPT" } });
+    await turn(gpt, "high", "/responses");
+    expect(receipts.some((receipt) => receipt.marker === "EFFORT_TURN_5" && receipt.customNativePrompt)).toBe(true);
+    await api("PATCH", "/api/config", { prompts: { opencode: "" } });
+    await turn(gpt, "high", "/responses");
+    expect(receipts.some((receipt) => receipt.marker === "EFFORT_TURN_6" && receipt.nativePrompt && !receipt.customNativePrompt)).toBe(true);
   } finally {
     const evidencePath = `${logPath}.opencode-copilot-efforts.json`;
     writeFileSync(evidencePath, JSON.stringify({ evidence, receipts }, null, 2));

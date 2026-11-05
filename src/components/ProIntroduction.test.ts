@@ -56,20 +56,20 @@ it("does not offer a purchase to signed-out or free accounts", async () => {
 
 it("someone with a plan sees that plan and the way to it, never an offer, and Cloud is never asked", async () => {
   for (const [state, text] of [
-    [plan({ entitlement: paid("max") }), "Max active · verified by MausBot Cloud"],
+    [plan({ entitlement: paid("max") }), "Max active · verified by RanzoBot Cloud"],
     [plan({ entitlement: paid("pro", "inactive") }), "Pro · not active right now"],
     [plan({ purchase: { state: "confirming", tier: "personal" } }), "Personal · payment received"],
-    [{ status: "unavailable", lastPlan: { tier: "personal", active: true } }, "Personal · checking with MausBot Cloud…"],
+    [{ status: "unavailable", lastPlan: { tier: "personal", active: true } }, "Personal · checking with RanzoBot Cloud…"],
     [{ status: "reauth-required", message: "expired", lastPlan: { tier: "max", active: true } }, "Sign in again to use the Cloud on this computer. Your plan is not affected."],
   ] as const) {
     const html = await card(state as CloudAccountState);
-    expect(html).toContain(text); expect(html).toContain("MausBot Cloud settings");
+    expect(html).toContain(text); expect(html).toContain("RanzoBot Cloud settings");
     expect(html).not.toContain("Start free trial"); expect(html).not.toContain("$15");
   }
   expect(bridge.offer).not.toHaveBeenCalled();
   for (const state of [{ status: "unavailable" }, { status: "connecting" }, { status: "signed-out", message: "restoring" }] as CloudAccountState[]) expect(await card(state)).toBe("");
   await card(plan({ entitlement: paid("max") }));
-  press("MausBot Cloud settings");
+  press("RanzoBot Cloud settings");
   expect(f.dispatch).toHaveBeenCalledWith({ type: "toggleAppSettings", open: true, section: "cloudAccount" });
 });
 

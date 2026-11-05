@@ -19,7 +19,7 @@ export interface ConfigStatus {
   greenference?: SavedKey;
   deepseek?: SavedKey;
   meta?: SavedKey;
-  /** X research comes with MausBot Cloud plans: `included` while this server holds the plan's relay credential;
+  /** X research comes with RanzoBot Cloud plans: `included` while this server holds the plan's relay credential;
    * `unavailable` when the Admin said no to this desktop's paid sign-in. */
   xResearch?: { included: boolean; unavailable?: boolean };
   /** The person's own treg key for research: configured or not, never the key. */
@@ -65,6 +65,8 @@ export interface ConfigStatus {
   /** `providerKeys`: names of the keys saved for OpenCode's other
    * providers, never the keys. */
   opencodeGo?: SavedKey & { providerKeys?: string[] };
+  /** Workspace-wide prompt settings, visible only to administrators. */
+  prompts?: { bot: string; opencode: string };
   /** Voice. `configured` = the engine has what it needs (an ElevenLabs or
    * Fish Audio key, or a Chatterbox server address); `ready` = that AND a voice, which is
    * what it takes to actually speak. The key itself is never echoed back;
@@ -126,7 +128,7 @@ export interface ConfigStatus {
   /** What a paired phone calls this computer; "" uses the default. */
   computerName?: string;
   /** Opt-in flags. Absent means off. */
-  features?: { skillAuthoring: boolean; skillReview?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; llmThreadTitles?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; savedSteps?: boolean; savedStepsHere?: boolean };
+  features?: { skillAuthoring: boolean; skillReview?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; llmThreadTitles?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; parallelRoomJobs?: boolean; savedSteps?: boolean; savedStepsHere?: boolean };
   /** First-run progress: whether the welcome tour was finished and which
    * one-time hints were dismissed. Server-owned so it follows the workspace. */
   onboarding?: OnboardingStatus;
@@ -141,7 +143,7 @@ export interface ConfigStatus {
   /** This server is an OMB Cloud home: it offers no "this computer" and no
    * Local VM (server/cloud-home.ts). Absent everywhere else. */
   cloudHome?: boolean;
-  /** A Team Cloud: the team this server is the home of, and the Plan page (MausBot Cloud) where its people and plan
+  /** A Team Cloud: the team this server is the home of, and the Plan page (RanzoBot Cloud) where its people and plan
    * are managed. Absent everywhere else. */
   team?: { id: string; name: string; cloudPage?: string };
 }
@@ -177,10 +179,10 @@ export interface BrowserEngineSummary {
   myChromeOn?: { name: string; device: "PC" | "Mac" | "computer"; online: boolean };
   /** On My Cloud with no computer lending Chrome: it can be lent from the desktop app. */
   myChromeLendable?: true;
-  /** browserEngine.engine: "chrome" when the bots' browsers run on OpenMausBot's own Chrome driver. */
+  /** browserEngine.engine: "chrome" when the bots' browsers run on RanzoBot's own Chrome driver. */
   engine?: "agent-browser" | "chrome";
   /** Self-hosted servers only: whether bots' browsers may open this server's own sites and its local network
-   * (browserEngine.egress.localNetwork, off by default). Absent on the desktop and on MausBot Cloud. */
+   * (browserEngine.egress.localNetwork, off by default). Absent on the desktop and on RanzoBot Cloud. */
   serverSites?: boolean;
 }
 

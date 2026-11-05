@@ -818,7 +818,7 @@ describe("routine comms e2e on the job runtime (fake ACP fleet)", () => {
   );
 
   it(
-    "keeps OpenMausBot tools authorized for Hermes after Stop issues a new bearer",
+    "keeps RanzoBot tools authorized for Hermes after Stop issues a new bearer",
     async () => {
       // Stop issues a new bearer; a pooled Hermes keeps its first agents server, so the next turn must run on a fresh process.
       for (const existing of (await api("GET", "/api/bots")).body.bots) {

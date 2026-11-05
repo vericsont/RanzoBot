@@ -381,7 +381,7 @@ test("a locked screen is refused in one plain sentence before the driver is reac
 
 test("a missing or quarantined driver says how to restore it, and names no path", async t => {
   const dir = await scratch(t);
-  const gone = path.join(dir, "Program Files", "OpenMausBot", "resources", "cua-driver.exe");
+  const gone = path.join(dir, "Program Files", "RanzoBot", "resources", "cua-driver.exe");
   const { results } = await lend(t, dir, {
     folders: [], computer: true, cuaConnection: async () => ({ mcpCommand: gone, mcpArgs: ["mcp"], mcpEnv: {} }),
     jobs: [{ action: "computer_call", tool_name: "get_desktop_state", arguments: {} }],
@@ -393,8 +393,8 @@ test("a missing or quarantined driver says how to restore it, and names no path"
 test("computer control that never started gives its reason as a fix the person can make", async t => {
   for (const [reason, expected] of [
     ["cua-driver binary not found", helperMissing()],
-    ["embedded host failed: Packaged background CUA driver is missing; reinstall OpenMausBot", helperMissing()],
-    ["Accessibility and Screen Recording required; grant access in System Settings and restart OpenMausBot", /allow Accessibility and Screen Recording/],
+    ["embedded host failed: Packaged background CUA driver is missing; reinstall RanzoBot", helperMissing()],
+    ["Accessibility and Screen Recording required; grant access in System Settings and restart RanzoBot", /allow Accessibility and Screen Recording/],
     ["no running cua-driver daemon", /Computer control is not running on this computer/],
   ]) {
     const dir = await scratch(t);

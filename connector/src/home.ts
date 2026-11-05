@@ -341,7 +341,7 @@ export class Home {
         const sent = await this.options.transfer.upload(`${admin.origin}${EXPORT_PATH}/${jobId}`, { authorization: `Bearer ${admin.token}` }, this.state.path(archive));
         return { bytes: sent.bytes, sha256: sent.sha256 };
       } catch (error) {
-        throw new JobFailure("transfer_failed", `The data could not be sent to MausBot (${errorText(error)}).`);
+        throw new JobFailure("transfer_failed", `The data could not be sent to RanzoBot (${errorText(error)}).`);
       } finally {
         rmSync(this.state.path(archive), { force: true });
         this.finish({});
@@ -511,7 +511,7 @@ export class Home {
     } catch (error) {
       const message = errorText(error);
       if (/port is already allocated|address already in use/i.test(message)) {
-        throw new JobFailure("port_in_use", `Port ${HOME_PORT} on this server's loopback is used by another program, and MausBot's home needs it.`);
+        throw new JobFailure("port_in_use", `Port ${HOME_PORT} on this server's loopback is used by another program, and RanzoBot's home needs it.`);
       }
       if (error instanceof DockerError && /apparmor|seccomp/i.test(message)) {
         throw new JobFailure("box_unavailable", "The bot box's security profiles are not installed on this server. Run the install command again to repair it.");

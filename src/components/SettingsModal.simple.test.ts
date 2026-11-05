@@ -224,7 +224,7 @@ describe("Settings in Simple mode", () => {
     vi.stubGlobal("window", { ogb: { ...desktop.ogb, updater: { check: vi.fn(), install: vi.fn(), onState: vi.fn() } } });
     fixture.updater = { status: "idle" };
     const html = open("updates");
-    expect(html).toMatch(/>MausBot [^<]+<\/div>/);
+    expect(html).toMatch(/>RanzoBot [^<]+<\/div>/);
     for (const shown of ["Check for updates", "MARKER:updatesConsent;", "Replay welcome tour", "Diagnostics"]) expect(placement(html, shown), shown).toBe("shown");
   });
 
@@ -233,7 +233,7 @@ describe("Settings in Simple mode", () => {
     const onSelect = vi.fn();
     fixture.serverUpdate = { phase: "up-to-date", pending: false, label: "Up to date", item: { key: "update", label: "Up to date", subtitle: "v1.2.3", icon: null, disabled: false, onSelect } };
     const html = open("updates");
-    expect(html).toMatch(/>MausBot [^<]+<\/div>/);
+    expect(html).toMatch(/>RanzoBot [^<]+<\/div>/);
     expect(html).toContain("Up to date v1.2.3");
     expect(placement(html, "Check for updates")).toBe("shown");
   });
@@ -255,6 +255,17 @@ describe("Settings in Simple mode", () => {
     expect(markers(html).filter((name) => name === "engines" || name === "decisionModel")).toEqual(["engines"]);
     expect(html).toMatch(/aria-expanded="false"[^>]*>[\s\S]*?>API keys</);
     expect(html).not.toContain("API keys and connections");
+  });
+
+  it("shows editable prompt settings under AI for admins in both modes", () => {
+    fixture.ownerOrAdmin = true;
+    fixture.config = { ...fixture.config, prompts: { bot: "Bot default", opencode: "OpenCode default" } };
+    expect(open("engines")).toContain('id="prompt-bot"');
+    expect(open("engines")).toContain('id="prompt-opencode"');
+    fixture.advancedMode = true;
+    expect(open("engines")).toContain('id="prompt-bot"');
+    fixture.ownerOrAdmin = false;
+    expect(open("engines")).not.toContain('id="prompt-bot"');
   });
 
   it("orders Computer as your bots' computers, your devices, the browser, logins, then Connect from elsewhere", () => {

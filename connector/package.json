@@ -2,7 +2,7 @@
   "name": "mausbot-connector",
   "private": true,
   "type": "module",
-  "description": "Runs a MausBot Cloud home on a server of its owner's, under MausBot's control, over one outbound connection.",
+  "description": "Runs a RanzoBot Cloud home on a server of its owner's, under RanzoBot's control, over one outbound connection.",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=24"

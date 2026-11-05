@@ -1,6 +1,6 @@
 # OpenCode reasoning choices
 
-The optional functional test launches the real OpenMausBot server, its OpenCode
+The optional functional test launches the real RanzoBot server, its OpenCode
 ACP driver, an explicitly supplied OpenCode binary, and an owned loopback
 Responses endpoint. All homes, configs, models, conversations and credentials
 are disposable. The test never discovers a CLI from the user's PATH or sends a
@@ -21,7 +21,7 @@ value. Omission at the HTTP boundary is proved here only for this synthetic
 fixture, which has no inherited effort options.
 
 The synthetic model advertises `minimal`, `low`, `medium`, `high` and `xhigh`.
-The checks require OpenMausBot to retain this catalog metadata, advertise its
+The checks require RanzoBot to retain this catalog metadata, advertise its
 variant capability, save different choices for two conversations on one bot,
 and forward each choice through its actual runtime and ACP driver. One
 conversation uses `low`; its sibling explicitly uses `default`. In this fixture, captured HTTP
@@ -29,7 +29,7 @@ requests must contain `reasoning.effort: "low"` for the first and omit the
 effort for the second. The provider encodes the received effort in its reply,
 and the test checks the conversation's final answer so an auxiliary native
 request cannot satisfy the main-turn assertion. Both conversations are sent again after restarting the
-OpenMausBot server with the same disposable data directory.
+RanzoBot server with the same disposable data directory.
 
 Evidence is written alongside the retained server log as
 `*.opencode-variants.json`. It records control actions, asserted selections,
@@ -40,7 +40,7 @@ its disposable home. The log and evidence paths are printed by the test.
 
 This proves API persistence and actual OMB → ACP → OpenCode → SDK transport
 against a simulated provider. It does not establish acceptance by any real
-provider, an upstream gateway's routing, or the OpenMausBot GUI. The fixture
+provider, an upstream gateway's routing, or the RanzoBot GUI. The fixture
 rejects `none` at its simulated provider as a guard; real model capabilities
 must still govern whether `none` is a valid choice. Renderer accessibility,
 profile and conversation selectors, stale response isolation, and the absence
@@ -75,6 +75,25 @@ beside the server log as `*.opencode-copilot-efforts.json`.
 This proves the catalog and the turn transport against OpenCode's own Copilot
 code and a simulated API. It does not prove which efforts a real Copilot
 account lists for each model; OpenCode reads those from Copilot's `/models`.
+
+### Autonomous prompts
+
+RanzoBot sends its prompt through ACP as conversation text, not as a native
+system message. For OpenCode's build agent it also sets a short agent prompt
+in `OPENCODE_CONFIG_CONTENT` for the child process, preserving other valid
+inline configuration and leaving the person's config files untouched. This
+changes the build agent only; a different selected agent, provider instructions,
+project instructions and plugins may still add their own instructions. Invalid
+or incompatible inline config is left unchanged. Permission settings and
+approval handling are not changed by the prompt override.
+
+The Copilot fixture also checks that its synthetic provider receives the short
+build-agent prompt in a system/developer field and the RanzoBot autonomy
+instructions in the conversation. The updated fixture passed with OpenCode
+2.0.32 and a loopback Copilot stand-in; it does not prove a real model will
+follow either prompt, or that every OpenCode version replaces the same native
+instructions. The fake-Claude bot-continuity fixture checks direct, setup and
+room dispatch separately.
 
 ## An unavailable engine returns without variant support
 

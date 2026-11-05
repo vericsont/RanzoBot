@@ -13,7 +13,7 @@ export function expandSetupTurnText(userText: string): string {
   if (!setup) return userText;
   return setup.request
     ? `Set yourself up for this job: ${setup.request}`
-    : "Set yourself up. Ask me what you need to know, then propose your configuration.";
+    : "Set yourself up for a job. Use what you know and ask only what is essential.";
 }
 
 export function setupModeActive(input: { soul?: string; description?: string; text: string }): boolean {
@@ -26,8 +26,8 @@ const NO_SKILL_MANAGE_ASIDE = "(keep SOUL.md short; describe procedures plainly 
 
 function folderClause(cwd: string | undefined): string {
   return cwd
-    ? `which folder on this computer it should work in (today that is ${cwd}; offer to keep it)`
-    : "which folder on this computer it should work in (today it has none and works in a private workspace; offer to keep that, or ask for a path)";
+    ? `The current working folder is ${cwd}; keep it unless the user asks to change it.`
+    : "There is no configured folder: work in the private workspace unless the user asks for a different folder.";
 }
 
 export type SetupConnectedApps =
@@ -64,8 +64,8 @@ function connectedAppsClause(apps: SetupConnectedApps): string {
         ? ` You have no connected-app tools, ${NO_APP} ask the user to open your settings → Access → Connected apps, turn it on, connect the app with Connect an app…, and give you its tools.`
         : ` Connected apps are switched off for you, ${NO_APP} ask the user to turn on Connected apps in your settings under Access, then tell you to go on; you can start the connection after that.`;
     case "not-configured":
-      if (apps.host === "cloud") return ` Connected apps come with their MausBot Cloud plan but are not answering right now, ${NO_APP} say so in one sentence and suggest trying again in a few minutes.`;
-      if (apps.host === "desktop") return ` Connected apps are not answering right now, ${NO_APP} say so in one sentence: restarting OpenMausBot usually brings them back, or they can add their own ${KEY_PLACE}.`;
+      if (apps.host === "cloud") return ` Connected apps come with their RanzoBot Cloud plan but are not answering right now, ${NO_APP} say so in one sentence and suggest trying again in a few minutes.`;
+      if (apps.host === "desktop") return ` Connected apps are not answering right now, ${NO_APP} say so in one sentence: restarting RanzoBot usually brings them back, or they can add their own ${KEY_PLACE}.`;
       return ` Connected apps are not set up here, ${NO_APP} say so in one sentence: they are set up by adding a ${KEY_PLACE}.`;
     case "unsupported":
       return ` Your current model cannot use connected apps, ${NO_APP} say so in one sentence.`;
@@ -84,9 +84,8 @@ function buildSetupPrompt(profileAside: string, apps: SetupConnectedApps, cwd?: 
   return (
     "\n\nThe user explicitly asked you to set yourself up. For this setup request, help configure the bot from what the user tells you." +
     (chief ? CHIEF_CLAUSE : "") +
-    ` First ask at most four questions that change what you would build: what the job is, when it should happen (on demand, on a schedule, or when something arrives), which apps or accounts it touches, and ${folderClause(cwd)}.` +
-    " Then, before any tool call, tell the user in plain language what you intend: who you will be, what you will do and when, where you will work, what you will need from them, and what you will not do. Ask for missing choices, not an extra yes for already-requested actions: changes to your own profile and routines apply immediately, and the person sees each with an Undo." +
-    " First send one message describing the changes you are about to request, then make the tool calls. Follow each result: if applied, continue without another confirmation; if pending, end the turn and wait for its in-app decision. Do not repeat the list or claim success from the permission mode alone." +
+    ` Use what the user has already told you and sensible defaults. Work on demand unless they request a schedule or event. ${folderClause(cwd)} Ask only for a required detail you cannot infer; do the rest now. Changes to your profile and routines apply immediately and the person sees each with an Undo.` +
+    " Follow each result: if applied, continue without another confirmation; if pending, end the turn and wait for its in-app decision. Never claim success before a tool confirms it." +
     ` Use propose_profile for your identity, standing rules ${profileAside}, and the working folder (cwd), trigger for a schedule or webhook the user describes, and request_credential for any missing token.` +
     connectedAppsClause(apps) +
     SIGN_IN_CLAUSE +

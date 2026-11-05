@@ -83,7 +83,7 @@ const conflict = (name: string, port: number): string | null => {
 const fixedName = process.env.OMB_COMPANION_NAME?.trim() || "";
 let cachedName = fixedName;
 
-const machineName = (): string => cachedName || "OpenMausBot";
+const machineName = (): string => cachedName || "RanzoBot";
 
 /** True when the name changed. */
 async function refreshMachineName(): Promise<boolean> {

@@ -16,7 +16,7 @@ export const AVATAR_FILE_TYPES = "image/png,image/jpeg,image/gif,image/webp";
 const LABEL = "text-[12px] font-medium uppercase tracking-wide text-ink-secondary";
 
 /** The welcome's own profile edit: name, colour, look, then a picture of the person's own or one made with AI. */
-export function MausBotCustomize({ preview, name, nameRef, image, onName, onPatch }: {
+export function RanzoBotCustomize({ preview, name, nameRef, image, onName, onPatch }: {
   preview: Bot;
   name: string;
   nameRef: RefObject<HTMLInputElement | null>;

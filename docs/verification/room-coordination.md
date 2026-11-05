@@ -19,7 +19,7 @@ At the next start (the runtime's restart policy, `server/runtime/runtime.ts` `op
   cut review, "Resumed with … results after a restart, reviewing"), and a
   direct requester's chat shows "Mira was cut off by a restart; resuming".
 - Never a second automatic run. A restart that cuts that rerun too ends it,
-  failed: "Interrupted by another OpenMausBot restart after resuming once; not
+  failed: "Interrupted by another RanzoBot restart after resuming once; not
   resumed again. Some of its steps may already have taken effect." The
   requester gets that result like any other; a Chief's own review ended that
   way says so in the Chief's conversation.
@@ -42,13 +42,13 @@ At the next start (the runtime's restart policy, `server/runtime/runtime.ts` `op
   rerun already running is left alone like any teammate mid-turn, and so is
   one the person left working by a Stop before the restart.
 - A routine run still going at a restart fails, as before, and its
-  teammates' work ends with it, "OpenMausBot restarted while this routine was
+  teammates' work ends with it, "RanzoBot restarted while this routine was
   running": none of it runs again, so no result lands after the person was
   told the routine failed.
 - On a quit or update, shutdown dispatches nothing more and leaves the turns
   it tears down cut for the next start, so a quit ends where a crash does,
   whatever the engine. Each conversation with a turn still running gets
-  "error: turn interrupted — OpenMausBot restarted", as a provider reload's
+  "error: turn interrupted — RanzoBot restarted", as a provider reload's
   does, and nothing more (no unread mark, no notification), unless the next
   start goes on with that turn: a cut teammate turn, or a requester's turn
   that had sent work, says what happened when it resumes instead (a failed
@@ -227,8 +227,8 @@ the first), then that the line clears once all three settle.
 
 ### Parallel room jobs (opt-in)
 
-With `features.parallelRoomJobs` on (`PATCH /api/config` with
-`{"features": {"parallelRoomJobs": true}}`, or `config.json`), a
+With `features.parallelRoomJobs` on (Settings → General, `PATCH /api/config`
+with `{"features": {"parallelRoomJobs": true}}`, or `config.json`), a
 `coordinate_bots` call that sends work to two or more members of a room, or
 into a room whose members already have jobs out, does not queue them in the
 room's thread. Each job runs in a thread of its own on its member, opened by

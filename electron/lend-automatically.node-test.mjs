@@ -436,7 +436,7 @@ test("through the home folder, keys, passwords, sign-ins and git secrets stay pr
 test("a Cloud's bot needing apps and screen on a Mac that lacks only macOS's permissions asks macOS for them, and says how to allow them", async t => {
   const homes = { [HOME]: cloudHome() };
   const asked = [];
-  const missing = { mode: "unavailable", reason: "Error: Accessibility and Screen Recording required; grant access in System Settings and restart OpenMausBot" };
+  const missing = { mode: "unavailable", reason: "Error: Accessibility and Screen Recording required; grant access in System Settings and restart RanzoBot" };
   const mac = await computer(t, { homes, places: [myCloud], screen: () => true, cuaConnection: async () => missing, askForScreen: connection => asked.push(connection) });
   mac.sharing.start();
   await until(() => homes[HOME].connects.length === 1, "lending to start");
@@ -444,7 +444,7 @@ test("a Cloud's bot needing apps and screen on a Mac that lacks only macOS's per
   homes[HOME].push({ action: "computer_tools" });
   await until(() => homes[HOME].results.length === 1, "the answer");
   assert.deepEqual(asked, [missing]);
-  assert.match(homes[HOME].results[0].content[0].text, /allow Accessibility and Screen Recording for OpenMausBot in System Settings/);
+  assert.match(homes[HOME].results[0].content[0].text, /allow Accessibility and Screen Recording for RanzoBot in System Settings/);
 });
 
 test("the move's project folders are lent to My Cloud with editing on top; while paused the move is told to try later", async t => {

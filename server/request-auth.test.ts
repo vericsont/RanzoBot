@@ -205,7 +205,7 @@ describe("scopes", () => {
     expect(clientBotPatchViolation({ xResearch: true })).toBe("xResearch");
     expect(clientBotPatchViolation({ recordBrowserSteps: true })).toBe("recordBrowserSteps");
     expect(clientBotPatchViolation([])).toBe("body");
-    // A Team Cloud member changes no team bot's look, which everyone sees; their own MausBot's they do.
+    // A Team Cloud member changes no team bot's look, which everyone sees; their own RanzoBot's they do.
     expect(clientBotPatchViolation({ color: "blue" }, false, true)).toBe("color");
     expect(clientBotPatchViolation({ avatarUrl: null }, false, true)).toBe("avatarUrl");
     expect(clientBotPatchViolation({ mascotBody: "cursor" }, false, true)).toBe("mascotBody");
@@ -685,11 +685,11 @@ describe("loopback trust: owner on one person's machine, service on a shared wor
 
   it("is always service on an OMB Cloud home, where a local request is only ever a process on the machine", () => {
     const pick = (env: NodeJS.ProcessEnv) => resolveLoopbackTrust({ env, desktopManaged: false, hostedWorkspace: false, cloudHome: true });
-    expect(pick({})).toEqual({ trust: "service", reason: "MausBot Cloud home", localBrowsers: false });
-    expect(pick({ OMB_LOOPBACK_TRUST: "service" })).toEqual({ trust: "service", reason: "MausBot Cloud home", localBrowsers: false });
+    expect(pick({})).toEqual({ trust: "service", reason: "RanzoBot Cloud home", localBrowsers: false });
+    expect(pick({ OMB_LOOPBACK_TRUST: "service" })).toEqual({ trust: "service", reason: "RanzoBot Cloud home", localBrowsers: false });
     const forced = pick({ OMB_LOOPBACK_TRUST: "owner" });
     expect(forced.trust).toBe("service");
-    expect(forced.warning).toMatch(/ignored on a MausBot Cloud home/);
+    expect(forced.warning).toMatch(/ignored on a RanzoBot Cloud home/);
   });
 
   it("lets only the CLI that started the server, holding its secret, mint a pairing code under service trust", () => {

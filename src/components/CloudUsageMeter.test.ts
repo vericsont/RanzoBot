@@ -71,7 +71,7 @@ describe("Settings → General", () => {
   };
   it("lists every allowance without pricing or upgrade actions", () => {
     const { html, tree, onUpgrade } = section(usage({ tier: "starter", upgrades: [{ tier: "max", amount: 9900 }, { tier: "pro", amount: 4900 }] }));
-    for (const text of ["MausBot Cloud usage", "What your Starter plan includes this month", "285 of 300 hours", "12,000 of 60,000 characters", "41.2 of 100 GB",
+    for (const text of ["RanzoBot Cloud usage", "What your Starter plan includes this month", "285 of 300 hours", "12,000 of 60,000 characters", "41.2 of 100 GB",
       "Resets on Nov 1."]) expect(html).toContain(text);
     expect(html.match(/role="progressbar"/g)).toHaveLength(3);
     expect(button(tree, "Upgrade")).toBeUndefined();

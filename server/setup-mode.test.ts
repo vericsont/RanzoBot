@@ -40,7 +40,7 @@ describe("parseSetupCommand", () => {
 describe("expandSetupTurnText", () => {
   it("turns a bare /setup into a request to set up, and keeps a described job", () => {
     expect(expandSetupTurnText("/setup")).toBe(
-      "Set yourself up. Ask me what you need to know, then propose your configuration.",
+      "Set yourself up for a job. Use what you know and ask only what is essential.",
     );
     expect(expandSetupTurnText("/setup watch Discord")).toBe("Set yourself up for this job: watch Discord");
     expect(expandSetupTurnText("hello")).toBe("hello");
@@ -79,8 +79,9 @@ describe("setupSystemPrompt", () => {
     for (const tool of ["propose_profile", "trigger", "skill_manage", "request_credential"]) {
       expect(prompt).toContain(tool);
     }
-    expect(prompt).toContain("at most four questions");
-    expect(prompt).toContain("Ask for missing choices, not an extra yes");
+    expect(prompt).toContain("Use what the user has already told you and sensible defaults");
+    expect(prompt).toContain("Ask only for a required detail you cannot infer");
+    expect(prompt).not.toContain("at most four questions");
   });
 
   it("never mentions skill_manage when active with skills off (or unspecified)", () => {
@@ -95,25 +96,25 @@ describe("setupSystemPrompt", () => {
 });
 
 describe("setupSystemPrompt working-folder clause and result ordering", () => {
-  it("names the current folder and tells the bot to offer to keep it", () => {
+  it("keeps the current folder by default", () => {
     const text = setupSystemPrompt(true, { skills: true, cwd: "/Users/me/Projects/site", connectedApps: AVAILABLE });
-    expect(text).toContain("today that is /Users/me/Projects/site; offer to keep it");
+    expect(text).toContain("current working folder is /Users/me/Projects/site; keep it unless the user asks to change it");
     expect(text).toContain("propose_profile for your identity, standing rules");
     expect(text).toContain("and the working folder (cwd)");
   });
 
   it("says there is no folder yet when the bot works in its private workspace", () => {
     const text = setupSystemPrompt(true, { skills: false, connectedApps: AVAILABLE });
-    expect(text).toContain("today it has none and works in a private workspace");
+    expect(text).toContain("work in the private workspace unless the user asks for a different folder");
     expect(text).not.toContain("skill_manage");
   });
 
-  it("explains the requested changes before tools and follows applied versus pending outcomes", () => {
+  it("follows applied versus pending outcomes without a mandatory announcement", () => {
     const text = setupSystemPrompt(true, { connectedApps: AVAILABLE });
-    expect(text).toContain("First send one message describing the changes you are about to request, then make the tool calls");
+    expect(text).not.toContain("before any tool call");
     expect(text).toContain("if applied, continue without another confirmation");
     expect(text).toContain("if pending, end the turn and wait");
-    expect(text).toContain("Do not repeat the list or claim success from the permission mode alone");
+    expect(text).toContain("Never claim success before a tool confirms it");
     expect(text).toContain("A credential request still needs the user's secure entry");
     expect(text).toContain("Full Access does not supply answers, credentials, or broader permissions for another bot");
     expect(text).not.toContain("each of which the user must confirm");
@@ -180,15 +181,15 @@ describe("setupSystemPrompt connected apps", () => {
     );
   });
 
-  it("says in one sentence where connected apps are set up when this OpenMausBot has none", () => {
+  it("says in one sentence where connected apps are set up when this RanzoBot has none", () => {
     expect(prompt({ state: "not-configured", host: "server" })).toContain(
       "Connected apps are not set up here, so you cannot connect an app such as Gmail yourself. If the job needs one, say so in one sentence: they are set up by adding a Composio project key in Settings → API keys, under Self-host connected apps.",
     );
     expect(prompt({ state: "not-configured", host: "desktop" })).toContain(
-      "restarting OpenMausBot usually brings them back, or they can add their own Composio project key in Settings → API keys, under Self-host connected apps.",
+      "restarting RanzoBot usually brings them back, or they can add their own Composio project key in Settings → API keys, under Self-host connected apps.",
     );
     const cloud = prompt({ state: "not-configured", host: "cloud" });
-    expect(cloud).toContain("Connected apps come with their MausBot Cloud plan but are not answering right now");
+    expect(cloud).toContain("Connected apps come with their RanzoBot Cloud plan but are not answering right now");
     expect(cloud).not.toContain("Composio");
     expect(prompt({ state: "unsupported" })).toContain("Your current model cannot use connected apps");
   });

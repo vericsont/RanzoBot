@@ -13,7 +13,7 @@ interface Seen { method: string; path: string; authorization: string | undefined
 const RELAY_PATH = "/api/cloud/services/x", PLAN_TOKEN = "omb_x_e2e_fixture", OWN_KEY = "treg_e2e_own_key";
 const RESEARCH_TOOLS = ["x_search", "research_search", "research_endpoint", "research_call"];
 const POSTS = { output: { data: { items: [
-  { id: "2107987482155561188", authorUsername: "maus", authorName: "Maus", createdUtc: 1791418354, text: "MausBot searched X", likeCount: 4, viewCount: 120 },
+  { id: "2107987482155561188", authorUsername: "maus", authorName: "Maus", createdUtc: 1791418354, text: "RanzoBot searched X", likeCount: 4, viewCount: 120 },
 ], nextCursor: "" } } };
 const USAGE = { calls: 312, max: 5_000, resetsAt: "2026-11-01T00:00:00.000Z" };
 const USED_UP = "Your Pro plan's 5,000 X research calls for October are used up. They reset on 1 November.";
@@ -129,7 +129,7 @@ it("with the person's own treg key, every bot has the tools by default and calls
   expect(bot.xResearch).toBeUndefined();
   const { tools, results } = await f.turn(bot, [SEARCH, PEOPLE]);
   expect(tools).toEqual(expect.arrayContaining(RESEARCH_TOOLS));
-  expect(results[0].posts).toEqual([expect.objectContaining({ id: "2107987482155561188", author: "@maus", text: "MausBot searched X" })]);
+  expect(results[0].posts).toEqual([expect.objectContaining({ id: "2107987482155561188", author: "@maus", text: "RanzoBot searched X" })]);
   expect(results[1]).toEqual({ result: { people: [{ name: "Maus" }] }, cost: "$0.0020", callId: "call-e2e" });
   const calls = f.seen.filter((seen: Seen) => !seen.path.startsWith("/auth/") && !seen.path.startsWith("/orgs/"));
   expect(calls.map((seen: Seen) => [seen.method, seen.path, seen.tregToken, seen.authorization])).toEqual([

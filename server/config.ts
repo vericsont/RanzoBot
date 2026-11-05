@@ -334,6 +334,11 @@ const appConfigSchema = z.object({
   cacheKeepWarm: cacheKeepWarmSchema.optional(),
   newBotDefaults: newBotDefaultsSchema.optional(),
   newBots: newBotsConfigSchema.optional(),
+  /** Workspace-wide bot reply and OpenCode build-agent instructions; empty uses the built-in default. */
+  prompts: z.object({
+    bot: z.string().max(12_000).refine((value) => !value.includes("\0")).optional(),
+    opencode: z.string().max(12_000).refine((value) => !value.includes("\0") && !/\{(?:file|env):/iu.test(value), "OpenCode instructions cannot contain file or environment substitutions").optional(),
+  }).strict().optional(),
   /** CLI launch preferences; never enables remote access implicitly. */
   cliStartup: z.object({
     access: z.enum(["local", "tunnel", "tailscale", "public-url"]),
@@ -484,6 +489,8 @@ export interface AppConfig extends HelperConfig {
   /** UI creation template. Saving it never mutates a bot or grants access. */
   newBotDefaults?: NewBotDefaults;
   newBots?: { effort?: EffortLevel };
+  /** Workspace-wide bot reply and OpenCode build-agent instructions; empty uses the built-in default. */
+  prompts?: { bot?: string; opencode?: string };
   cliStartup?: {
     access: "local" | "tunnel" | "tailscale" | "public-url";
     publicUrl?: string;
@@ -898,7 +905,7 @@ function openCodeProviderKeyNameRefusal(name: string): string | undefined {
   const reserved = name.startsWith("OPENCODE_") || name.startsWith("OMB_")
     || (WORKSPACE_CREDENTIAL_ENV as readonly string[]).includes(name)
     || ((PROVIDER_CREDENTIAL_ENV as readonly string[]).includes(name) && !(OPENCODE_PROVIDER_ENV as readonly string[]).includes(name));
-  return reserved ? `OpenMaus keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.` : undefined;
+  return reserved ? `RanzoBot keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.` : undefined;
 }
 
 export function openCodeProviderKeys(cfg: Pick<AppConfig, "opencodeGo">): Record<string, string> {
@@ -959,7 +966,7 @@ export function saveConfig(
   const before = configSaveListeners.size ? structuredClone(disk) : disk;
   const storedProfiles = storedBrowserProfilesSchema.safeParse(disk.browserProfiles);
   if (storedProfiles.success) disk.browserProfiles = storedProfiles.data;
-  for (const key of ["xai", "anthropic", "mistral", "cerebras", "treg", "postiz", "groq", "greenference", "meta", "deepseek", "openai", "openrouter", "openaiCompat", "composio", "box", "opencodeGo", "tts", "decider", "imageGen", "live", "profile", "rooms", "goalRuns", "mcp", "threads", "context", "memory", "localVm", "features", "budgets", "billing", "decisions", "loopGuard", "onboarding", "browserEngine", "newBots", "safetyFloor"] as const) {
+  for (const key of ["xai", "anthropic", "mistral", "cerebras", "treg", "postiz", "groq", "greenference", "meta", "deepseek", "openai", "openrouter", "openaiCompat", "composio", "box", "opencodeGo", "tts", "decider", "imageGen", "live", "profile", "rooms", "goalRuns", "mcp", "threads", "context", "memory", "localVm", "features", "budgets", "billing", "decisions", "loopGuard", "onboarding", "browserEngine", "newBots", "safetyFloor", "prompts"] as const) {
     const section = checkedPatch[key];
     if (!section) continue;
     const current = jsonObjectSchema.safeParse(disk[key]);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, useStore, type ConfigStatus } from "@/state/store";
 import { builtInBrowserEnabled, showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
 import { localeChoices } from "@/locales";
@@ -79,6 +79,41 @@ export function UpdatesRow({ title = t("settings.updates.title") }: { title?: st
       </button>
     </SettingRow>
   );
+}
+
+export function ParallelRoomJobsRow({ simple = false }: { simple?: boolean }) {
+  const { state, dispatch } = useStore();
+  const enabled = state.config?.features?.parallelRoomJobs === true;
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const saveInFlight = useRef(false);
+
+  const toggle = async () => {
+    if (saveInFlight.current) return;
+    saveInFlight.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      const config: ConfigStatus = await api("/api/config", {
+        method: "PATCH",
+        body: JSON.stringify({ features: { parallelRoomJobs: !enabled } }),
+      });
+      dispatch({ type: "configStatus", config });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("settings.parallelRoomJobs.error"));
+    } finally {
+      saveInFlight.current = false;
+      setSaving(false);
+    }
+  };
+
+  const control = <Switch checked={enabled} aria-label={t("settings.parallelRoomJobs.title")} disabled={saving}
+    onClick={() => void toggle()} className="disabled:cursor-wait disabled:opacity-50" />;
+  const message = error ? <p role="alert" className="mt-2 text-danger">{error}</p> : null;
+
+  return simple
+    ? <SettingRow title={t("settings.parallelRoomJobs.title")} subtitle={t("settings.parallelRoomJobs.subtitle")} message={message}>{control}</SettingRow>
+    : <><div className="flex justify-end">{control}</div>{message}</>;
 }
 
 export function NewBotEffortRow() {

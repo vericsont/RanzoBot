@@ -40,6 +40,8 @@ it("keeps ordinary work out of setup and carries explicit bot defaults and file 
       return receipt();
     };
     const ordinary = await direct("What is 17 + 25? Answer with the number.");
+    expect(ordinary.system).toContain("Work independently");
+    expect(ordinary.system).toContain("Do not ask for confirmation at each step");
     expect(ordinary.system).not.toContain("at most four questions");
     expect(ordinary.system).not.toContain("The user explicitly asked you to set yourself up");
     const oldFile = join(fixture.info.dataDir, "workspaces", bot.id, "garden-plan.txt");
@@ -50,7 +52,8 @@ it("keeps ordinary work out of setup and carries explicit bot defaults and file 
 
     const setup = await direct("/setup Help me track garden watering");
     expect(setup.system).toContain("The user explicitly asked you to set yourself up");
-    expect(setup.system).toContain("at most four questions");
+    expect(setup.system).toContain("Ask only for a required detail you cannot infer");
+    expect(setup.system).not.toContain("at most four questions");
     const afterSetup = await direct("Never mind setup. Summarize: the garden needs water Friday.");
     expect(afterSetup.system).not.toContain("at most four questions");
     expect(JSON.stringify(afterSetup.prompt)).toContain("Never mind setup");
@@ -72,6 +75,8 @@ it("keeps ordinary work out of setup and carries explicit bot defaults and file 
     const shared = await room("Read the garden-plan.txt you made earlier and tell me its fixture code.");
     expect(shared.model).toBe(b);
     expect(shared.system).toContain("You look after the garden");
+    expect(shared.system).toContain("Work independently");
+    expect(shared.system).toContain("Do not ask for confirmation at each step");
     expect(shared.system).toContain(JSON.stringify(join(fixture.info.dataDir, "task-workspaces", bot.id)));
     expect(shared.system).toContain(JSON.stringify(join(fixture.info.dataDir, "workspaces", bot.id)));
     expect(readFileSync(oldFile, "utf8")).toContain("MOSS-42");
@@ -80,6 +85,24 @@ it("keeps ordinary work out of setup and carries explicit bot defaults and file 
     expect(state.tasks.find((task: any) => task.threadId === sibling.threadId)).toMatchObject({ modelSelection: selection(b), followsBotModel: true });
     const { task: future } = await api("POST", `/api/bots/${bot.id}/tasks`, { title: "Future uses default" });
     expect(future.modelSelection).toEqual(selection(b));
+
+    const defaults = (await api("GET", "/api/config")).prompts;
+    expect(defaults.bot).toContain("Work independently");
+    expect(defaults.opencode).toContain("RanzoBot");
+    await api("PATCH", "/api/config", { prompts: { bot: "x".repeat(12001) } }, 400);
+    await api("PATCH", "/api/config", { prompts: { opencode: "{file:/tmp/secret}" } }, 400);
+    await api("PATCH", "/api/config", { prompts: { opencode: "{env:SECRET}" } }, 400);
+    await api("PATCH", "/api/config", { prompts: { bot: "FIXTURE_BOT_INSTRUCTIONS", opencode: "FIXTURE_OPENCODE_INSTRUCTIONS" } });
+    expect((await api("GET", "/api/config")).prompts).toEqual({ bot: "FIXTURE_BOT_INSTRUCTIONS", opencode: "FIXTURE_OPENCODE_INSTRUCTIONS" });
+    expect(JSON.parse(readFileSync(join(fixture.info.dataDir, "config.json"), "utf8")).prompts).toEqual({ bot: "FIXTURE_BOT_INSTRUCTIONS", opencode: "FIXTURE_OPENCODE_INSTRUCTIONS" });
+    expect((await api("GET", `/api/bots/${bot.id}/system-prompt`)).sections.find((section: any) => section.id === "reply-habits").text).toContain("FIXTURE_BOT_INSTRUCTIONS");
+    for (const captured of [await direct("Check custom prompt."), await room("Check custom prompt in this room.")]) {
+      expect(captured.system).toContain("FIXTURE_BOT_INSTRUCTIONS");
+      expect(captured.system).toContain("Never ask for passwords, one-time codes or card numbers in chat");
+    }
+    await api("PATCH", "/api/config", { prompts: { bot: "", opencode: "" } });
+    expect((await api("GET", "/api/config")).prompts).toEqual(defaults);
+    expect((await direct("Check reset prompt.")).system).toContain("Work independently");
 
     await api("PATCH", `/api/bots/${bot.id}/tasks/${bot.threadId}`, { modelSelection: selection(a) });
     expect((await direct("Reply once for the thread-only model test.")).model).toBe(a);

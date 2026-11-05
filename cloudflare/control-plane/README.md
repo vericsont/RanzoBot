@@ -1,4 +1,4 @@
-# OpenMausBot control plane
+# RanzoBot control plane
 
 This directory is an isolated Cloudflare Worker for cloud account identity,
 installation ownership, and per-installation managed companion endpoints. It
@@ -586,7 +586,7 @@ Workers Free, four accounts with `OMB_CLEANUP_SWEEP_LIMIT` 4 use the whole
 
 ### HighLevel OAuth relay
 
-OpenMausBot's native HighLevel (GoHighLevel, and white-labels such as Growably)
+RanzoBot's native HighLevel (GoHighLevel, and white-labels such as Growably)
 integration signs a person in through a Marketplace app registered to us. The
 app's client secret lives only in this Worker; the harness (desktop or a Cloud
 home) never sees it. Routes, none of which need an installation credential: the

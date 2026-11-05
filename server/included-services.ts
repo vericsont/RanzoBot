@@ -97,7 +97,7 @@ export function deciderCredential(
 }
 
 /** X research's relay token on a signed-in desktop: the desktop's main process
- * fetches it with its MausBot Cloud sign-in while the plan is paid
+ * fetches it with its RanzoBot Cloud sign-in while the plan is paid
  * (electron/main.mjs) and hands it over on the private parent port. Held in
  * memory only, never written to config. */
 let desktopX: ServiceCredential | null = null;

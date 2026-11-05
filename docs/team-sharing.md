@@ -114,7 +114,7 @@ writes down its own setup.
    `grok-bot-export-<name>.json` or replies with it.
 2. Bring that back: paste the whole reply (chat text and code fences are fine),
    drop the file or choose it. In the desktop app, on the computer running
-   OpenMausBot, files named `grok-bot-export*` in Downloads are offered in one
+   RanzoBot, files named `grok-bot-export*` in Downloads are offered in one
    tap; a split or re-saved export joins up.
 3. The preview names the Bot and counts its skills, routines and memories. Nothing
    is written yet.
@@ -152,7 +152,7 @@ the rest nothing.
 
 The earlier `openmaus.grok/1` export still reads.
 
-After the button is pressed, and on the computer running OpenMausBot only, the
+After the button is pressed, and on the computer running RanzoBot only, the
 desktop app reads through `GET /api/setup-import/grok` (its own window only, never
 a paired device, a browser, a bot's shell, a Cloud or a hosted server) those
 Downloads files and one slice of the Grok Bot app's UI cache in

@@ -441,7 +441,7 @@ it("keeps the person's request on work handed on after a card answer, on the roo
   f.plan[f.lead.id] = { reply: "LEAD_DONE" };
   const ask = (key: string, brief: string, credential: string) => ({
     steps: [{ tool: "request_credential", arguments: { credential_id: credential, reason: "The team needs it" } }], reply: "Asked",
-    byPrompt: [{ promptIncludes: "OpenMausBot credential update", plan: f.delegate(key, [f.lead], brief) }],
+    byPrompt: [{ promptIncludes: "RanzoBot credential update", plan: f.delegate(key, [f.lead], brief) }],
   });
 
   f.plan[f.chief.id] = ask("after-card", "CARD_ONE_BRIEF check the team", "xaiApiKey");
@@ -726,7 +726,7 @@ it.each(["SIGTERM", "SIGKILL"] as const)("resumes a Chief whose own turn a resta
   await expect.poll(async () => (await f.messages()).some((m: any) => m.text === "CUT_REVIEWED"), { timeout: 30_000 }).toBe(true);
   expect(f.turns()).toHaveLength(chiefTurns + 1);
   expect(f.turns().at(-1).resumed).toBe(true);
-  expect(f.prompt(f.turns().at(-1))).toContain("OpenMausBot restarted before your previous turn here finished, after it sent work to teammates.");
+  expect(f.prompt(f.turns().at(-1))).toContain("RanzoBot restarted before your previous turn here finished, after it sent work to teammates.");
   expect(f.prompt(f.turns().at(-1))).toContain("LEAD_DONE_BEFORE_RESTART");
   expect(f.turns(f.lead.id)).toHaveLength(1);
   // The final reply is saved before the Chief's graph settlement is persisted.
@@ -796,7 +796,7 @@ it("ends a Chief's review a second restart cuts, and says so in its conversation
   await expect.poll(() => f.root(), { timeout: 20_000 }).toMatchObject({ status: "running", restart: "rerun" });
   await expect.poll(() => f.consumed(), { timeout: 20_000 }).toBe(4); // warm-up, delegation, review, its rerun
   await f.restart(() => {}, "SIGKILL");
-  const ended = "error: Interrupted by another OpenMausBot restart after resuming once; not resumed again. Some of its steps may already have taken effect.";
+  const ended = "error: Interrupted by another RanzoBot restart after resuming once; not resumed again. Some of its steps may already have taken effect.";
   await expect.poll(async () => (await f.messages()).filter((m: any) => m.tool?.name === ended).length, { timeout: 20_000 }).toBe(1);
   expect(f.root()).toMatchObject({ status: "failed", reported: true });
   f.open(f.gate("review"));
