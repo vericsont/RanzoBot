@@ -226,6 +226,7 @@ export type BotAvatarProps = Omit<MausAvatarProps, "color" | "gradient"> & {
     avatarFocusY?: number;
     mascotBody?: BotBodyId | null;
     mascotFaceColor?: MascotFaceColor | null;
+    defaultBot?: object;
   };
 };
 
@@ -256,6 +257,10 @@ export function BotAvatar({ bot, size = 44, label, readable = false, ...mascotPr
     hasUrl: Boolean(profile.avatarUrl),
     imageFailed,
   });
+
+  if (outcome !== "flatImage" && bot.defaultBot && !profile.avatarUrl && !bot.mascotBody && bot.color === "chrome" && !bot.mascotFaceColor) {
+    return <img src="/app-icon.svg" alt={label ?? bot.name ?? "RanzoBot"} width={size} height={size} className="shrink-0" />;
+  }
 
   if (outcome !== "flatImage") {
     return (

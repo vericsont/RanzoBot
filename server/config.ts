@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import { normalizeImageGenerationUrl, type ImageGenerationConfig } from "../shared/image-generation.ts";
+import { DEFAULT_GOAL_RUN_MAX_TURNS, MAX_GOAL_RUN_MAX_TURNS, MIN_GOAL_RUN_MAX_TURNS } from "../shared/group-goal-run.ts";
 import { botAvatarUrlSchema } from "../shared/bot-avatar.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import { defaultBotThreads, MAX_CONCURRENT_BOT_THREADS } from "./bot-thread-limits.ts";
@@ -76,6 +77,11 @@ const roomConfigSchema = z.object({
     .min(MIN_ROOM_TURN_TIMEOUT_MINUTES)
     .max(MAX_ROOM_TURN_TIMEOUT_MINUTES),
 });
+const goalRunsConfigSchema = z.object({
+  maxTurns: z.number().int().min(MIN_GOAL_RUN_MAX_TURNS).max(MAX_GOAL_RUN_MAX_TURNS)
+    .refine((turns) => turns % 2 === 1, "must be an odd number")
+    .optional(),
+}).strict();
 const mcpConfigSchema = z.object({
   /** Minutes one bot MCP tool call may run; default 10. */
   callTimeoutMinutes: z
@@ -425,6 +431,8 @@ const appConfigSchema = z.object({
   /** UI language override (BCP-47, lowercase), absent follows the system; what a paired phone calls this computer, "" for the default. */
   language: optionalText, computerName: z.string().trim().max(63).optional(),
   rooms: roomConfigSchema.optional(),
+  /** Odd cap for autonomous goal runs; unset uses OMB_GOAL_MAX_TURNS or 13. */
+  goalRuns: goalRunsConfigSchema.optional(),
   mcp: mcpConfigSchema.optional(),
   context: z.object({
     compactAt: z.number().positive().max(10_000_000).optional(),
@@ -513,6 +521,7 @@ export interface AppConfig extends HelperConfig {
   live?: { key?: string; voice?: string; readTypedReplies?: boolean; idleMinutes?: number };
   profile?: { name?: string; email?: string; aboutMe?: string; avatarUrl?: string };
   rooms?: { turnTimeoutMinutes: number };
+  goalRuns?: { maxTurns?: number };
   mcp?: { callTimeoutMinutes?: number };
   threads?: { maxConcurrentPerBot: number; eventLogMaxBytes?: number; eventLogRetentionDays?: number };
   context?: { rebuildBytes?: number; compactAt?: number; autoCompact?: boolean; roomCompactAt?: number; roomSessions?: boolean; replayToolHistory?: boolean };
@@ -628,6 +637,14 @@ export function browserEngineAttachCdpUrl(cfg: AppConfig): string | null {
 
 export function roomTurnTimeoutMinutes(cfg: AppConfig): number {
   return cfg.rooms?.turnTimeoutMinutes ?? DEFAULT_ROOM_TURN_TIMEOUT_MINUTES;
+}
+
+export function groupGoalMaxTurns(cfg: Pick<AppConfig, "goalRuns">, env: NodeJS.ProcessEnv = process.env): number {
+  if (cfg.goalRuns?.maxTurns !== undefined) return cfg.goalRuns.maxTurns;
+  const turns = Number(env.OMB_GOAL_MAX_TURNS);
+  return Number.isSafeInteger(turns) && turns >= MIN_GOAL_RUN_MAX_TURNS && turns <= MAX_GOAL_RUN_MAX_TURNS && turns % 2 === 1
+    ? turns
+    : DEFAULT_GOAL_RUN_MAX_TURNS;
 }
 
 export function mcpCallTimeoutMinutes(cfg: AppConfig): number {
@@ -942,7 +959,7 @@ export function saveConfig(
   const before = configSaveListeners.size ? structuredClone(disk) : disk;
   const storedProfiles = storedBrowserProfilesSchema.safeParse(disk.browserProfiles);
   if (storedProfiles.success) disk.browserProfiles = storedProfiles.data;
-  for (const key of ["xai", "anthropic", "mistral", "cerebras", "treg", "postiz", "groq", "greenference", "meta", "deepseek", "openai", "openrouter", "openaiCompat", "composio", "box", "opencodeGo", "tts", "decider", "imageGen", "live", "profile", "rooms", "mcp", "threads", "context", "memory", "localVm", "features", "budgets", "billing", "decisions", "loopGuard", "onboarding", "browserEngine", "newBots", "safetyFloor"] as const) {
+  for (const key of ["xai", "anthropic", "mistral", "cerebras", "treg", "postiz", "groq", "greenference", "meta", "deepseek", "openai", "openrouter", "openaiCompat", "composio", "box", "opencodeGo", "tts", "decider", "imageGen", "live", "profile", "rooms", "goalRuns", "mcp", "threads", "context", "memory", "localVm", "features", "budgets", "billing", "decisions", "loopGuard", "onboarding", "browserEngine", "newBots", "safetyFloor"] as const) {
     const section = checkedPatch[key];
     if (!section) continue;
     const current = jsonObjectSchema.safeParse(disk[key]);

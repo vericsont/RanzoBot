@@ -6,28 +6,26 @@ import { cn } from "@/lib/cn";
 import { useCopyFeedback } from "@/lib/copy-text";
 import { usePageOpener } from "@/lib/page-open";
 import { t } from "@/lib/i18n";
-import { api, useStore, type Message } from "@/state/store";
-import { ASK_CHIP, ASK_CHIP_IDLE, ASK_PRIMARY_BUTTON } from "./AskCard";
+import { api, type Message } from "@/state/store";
+import { ASK_CHIP, ASK_CHIP_IDLE } from "./AskCard";
 
 const usageLine = (card: Card) => card.usage ? t("chat.page.usage", { pages: card.usage.pages, limit: card.usage.limit }) : null;
 
 function limitLine(card: Card): string {
   const limit = card.usage?.limit;
   if (limit === undefined) return card.message ?? "";
-  return card.plan === "free" ? t("chat.page.freeLimit", { limit }) : t("chat.page.planLimit", { limit, plan: cloudPlanLabel(card.plan) });
+  return t("chat.page.planLimit", { limit, plan: cloudPlanLabel(card.plan) });
 }
 
 /** A page a bot published: its link, Copy link, Open and Unpublish; or, at the plan's limit, why not and where to get more.
  * The link and Open both open the page (usePageOpener): never a message, a turn or a chat. */
 export function PublishedPageCard({ message }: { message: Message }) {
-  const { dispatch } = useStore();
   const card = message.publishedPage;
   const { state: copied, copy } = useCopyFeedback(card?.url ?? "");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const openPage = usePageOpener();
   if (!card) return null;
-  const bridge = window.ogb?.remoteClient?.active ? undefined : window.ogb?.cloudAccount;
   const unpublish = async () => {
     if (!card.pageId) return;
     setBusy(true);
@@ -64,8 +62,6 @@ export function PublishedPageCard({ message }: { message: Message }) {
       {card.state === "unpublished" && <p className="mt-1 text-[13px] text-ink-secondary">{t("chat.page.unpublished")}</p>}
       {card.state === "limit" && <>
         <p dir="auto" className="mt-1 text-[13px] leading-snug text-ink-secondary">{limitLine(card)}</p>
-        {card.upgrade && bridge && <button type="button" className={cn(ASK_PRIMARY_BUTTON, "mt-2")}
-          onClick={() => dispatch({ type: "openCloudAdd", source: "app_pages" })}>{t("chat.page.morePages")}</button>}
       </>}
     </div>
   );

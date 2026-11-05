@@ -24,6 +24,7 @@ afterEach(() => {
 describe("brand.json", () => {
   it("is the default brand when no file exists, pointing at where one would go", () => {
     const file = join(tmpdir(), "omb-brand-missing", "brand.json");
+    expect(DEFAULT_BRAND.name).toBe("RanzoBot");
     expect(loadBrand({ file, isEntitled: licensed })).toEqual({ brand: DEFAULT_BRAND, source: "default", file });
     expect(describeBrand(loadBrand({ file, isEntitled: licensed }))).toBe("brand: default");
   });

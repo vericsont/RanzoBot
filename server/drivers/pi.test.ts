@@ -414,6 +414,28 @@ describe("PiDriver turns (fake CLI)", () => {
     expect(instance.adapter.hasSession("t-happy")).toBe(false);
   });
 
+  it("surfaces Pi's set_model refusal details without prompting", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "omb-pi-set-model-error-"));
+    const dump = join(dir, "rpc.jsonl");
+    await create(undefined, {
+      FAKE_PI_DUMP: dump,
+      FAKE_PI_SET_MODEL_ERROR: "No model found for provider/model",
+    });
+    const { turnId } = await instance.adapter.sendTurn({
+      threadId: "t-set-model-error",
+      text: "hi",
+      model: "provider/model",
+    });
+    const done = await recorder.until((e) => e.type === "turn.completed" && e.turnId === turnId);
+
+    expect(done).toMatchObject({ ok: false, stopReason: "failed" });
+    expect(recorder.events.find((e) => e.type === "runtime.error")).toMatchObject({
+      message: "pi set_model failed: No model found for provider/model",
+    });
+    const rows = readFileSync(dump, "utf8").trim().split("\n").map((line) => JSON.parse(line));
+    expect(rows.some((row) => row.prompt !== undefined)).toBe(false);
+  });
+
   it("reassembles chunked turn frames from a protocol-v2 runtime", async () => {
     await create("omp-chunk");
     const { turnId } = await instance.adapter.sendTurn({ threadId: "t-omp-chunk", text: "hi" });
@@ -643,7 +665,7 @@ describe("PiDriver turns (fake CLI)", () => {
     const done = await recorder.until((e) => e.type === "turn.completed" && e.turnId === turnId);
     expect(done).toMatchObject({ ok: false, stopReason: "failed" });
     expect(recorder.events.find((e) => e.type === "runtime.error")).toMatchObject({
-      message: "pi prompt failed",
+      message: "pi prompt failed: fake pi: compaction in progress",
     });
     recorder.stop();
     await instance.dispose();

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, Check, Plus } from "lucide-react";
-import { BotAvatar, MausAvatar } from "@/components/Avatar";
+import { BotAvatar } from "@/components/Avatar";
 import { engineReady } from "@/components/EngineLibrary";
 import { usePrefersReducedMotion } from "@/components/mascot-clock";
 import { brand, productName } from "@/lib/brand";
@@ -87,7 +87,7 @@ export function MeetScreen({ hosted, onNext }: { hosted: boolean; onNext: () => 
         ) : maus ? (
           <BotAvatar bot={maus} size={MASCOT_SIZE} state={face} animated={!reduced} />
         ) : (
-          <MausAvatar color="chrome" size={MASCOT_SIZE} state={face} animated={!reduced} label={DEFAULT_BOT_NAME} />
+          <img src="/app-icon.svg" alt={DEFAULT_BOT_NAME} width={MASCOT_SIZE} height={MASCOT_SIZE} className="size-full" />
         )}
       </span>
       <DemoComposer reduced={reduced} onTyping={setTyping} />

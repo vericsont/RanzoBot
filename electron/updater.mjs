@@ -12,6 +12,7 @@ import {
 } from "./package-install-command.mjs";
 import { canInstallElevated, installPackageElevated } from "./elevated-install.mjs";
 import { releaseSingleInstanceLock } from "./single-instance.mjs";
+import { isRanzoBotBuild } from "./product-identity.mjs";
 import { openBlankTerminal } from "./terminal-launch.mjs";
 import { createUpdaterCoordinator } from "./updater-coordinator.mjs";
 import { createQuietInstall, installFailed, launchAfter, LOOK_EVERY_MS, updateSeen } from "./update-when-quiet.mjs";
@@ -146,7 +147,7 @@ export function attachUpdaterWindow(mainWindow) {
 
 /** `signals` (quietSignals): what tells a quiet moment; without them a downloaded update installs only on Restart or quit. */
 export function startUpdater(signals = null) {
-  if (!app.isPackaged) {
+  if (!app.isPackaged || isRanzoBotBuild(app.getName())) {
     updaterCoordinator = null;
     setState({ status: "idle" });
     return;

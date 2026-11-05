@@ -37,7 +37,7 @@ describe("t", () => {
   });
 
   it("fills {app} with the product's name, a white-label brand's own name, or the name a caller passes", () => {
-    expect(t("routines.runsOn.localHint")).toBe("Starts while MausBot is open here.");
+    expect(t("routines.runsOn.localHint")).toBe("Starts while RanzoBot is open here.");
     expect(t("routines.runsOn.localHint", { app: "Acme" })).toBe("Starts while Acme is open here.");
     applyBrand({ brand: { name: "Acme Bots" }, source: "file", file: "/brand.json" });
     try {
@@ -45,6 +45,14 @@ describe("t", () => {
     } finally {
       applyBrand({ brand: DEFAULT_BRAND, source: "default", file: "" });
     }
+  });
+
+  it("uses the product name without renaming the upstream cloud service", () => {
+    expect(t("pro.disclaimer")).toContain("RanzoBot");
+    expect(t("settings.talk.title")).toContain("RanzoBot");
+    expect(t("pro.name")).toBe("MausBot Cloud");
+    setLocale("de");
+    expect(t("pro.disclaimer")).toContain("RanzoBot");
   });
 
   it("keeps new department lifecycle labels available in partial packs, with interpolated names and counts", () => {

@@ -19,6 +19,7 @@ services:
     environment:
       OMB_PORT: "8799"
       OMB_WEBHOOK_PORT: "8800"
+      OMB_GOAL_MAX_TURNS: ${OMB_GOAL_MAX_TURNS:-13}
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_WEBHOOK_PUBLIC_URL:-${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}}
     healthcheck:

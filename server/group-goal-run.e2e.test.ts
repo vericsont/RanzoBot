@@ -34,7 +34,8 @@ const completeReplies = [
   "The verified draft is ready to ship.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Draft produced and independently verified.\"}</openmaus-goal>",
 ];
 
-const loopReplies = Array.from({ length: 13 }, (_, index) =>
+const fixtureGoalMaxTurns = 15;
+const loopReplies = Array.from({ length: fixtureGoalMaxTurns }, (_, index) =>
   index % 2 === 0
     ? `More work is needed.\n<openmaus-goal>{"status":"continue","next":"Looper","instruction":"Try approach ${index / 2 + 1}","detail":"Still working"}</openmaus-goal>`
     : `Approach ${Math.ceil(index / 2)} did not finish the task.`,
@@ -207,6 +208,7 @@ beforeAll(async () => {
       USERPROFILE: home,
       OMB_PORT: String(port),
       OMB_WEBHOOK_PORT: String(port + 1),
+      OMB_GOAL_MAX_TURNS: String(fixtureGoalMaxTurns),
       OMB_STATIC_DIR: staticDir,
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -987,31 +989,37 @@ describe("goal-driven channel runs", () => {
     }
   });
 
-  it("pauses a non-converging team at the hard turn limit", async () => {
-    const looper = (await api("POST", "/api/bots", {
-      name: "Looper",
-      modelSelection: { instanceId: "loop", model: "claude-sonnet-5" },
-      requireAvailableModel: true,
-    })).body.bot;
-    const room = (await api("POST", "/api/groups", {
-      name: "Bounded team",
-      memberIds: [looper.id],
-      setup: { bulletin: "", defaultResponder: { kind: "member", botId: looper.id } },
-    })).body.group;
-    const started = await api("POST", `/api/groups/${room.id}/messages`, {
-      text: "Keep trying forever",
-      mode: "goal",
-    });
-    expect(started.status).toBe(202);
-    // Per-turn digests can push the card out of a tail page, so read around the accepted message.
-    const initial = await api("GET", `/api/threads/${started.body.threadId}/messages?around=${started.body.message.id}&limit=3`);
-    const card = initial.body.messages.find((message: { kind: string }) => message.kind === "goal.run");
-    expect(card).toMatchObject({ id: expect.any(String) });
+  it("pauses a non-converging team at the configured turn limit", async () => {
+    const configuredMaxTurns = 7;
+    expect((await api("PUT", "/api/config", { goalRuns: { maxTurns: configuredMaxTurns } })).body.goalRuns)
+      .toEqual({ maxTurns: configuredMaxTurns });
+    try {
+      const looper = (await api("POST", "/api/bots", {
+        name: "Looper",
+        modelSelection: { instanceId: "loop", model: "claude-sonnet-5" },
+        requireAvailableModel: true,
+      })).body.bot;
+      const room = (await api("POST", "/api/groups", {
+        name: "Bounded team",
+        memberIds: [looper.id],
+        setup: { bulletin: "", defaultResponder: { kind: "member", botId: looper.id } },
+      })).body.group;
+      const started = await api("POST", `/api/groups/${room.id}/messages`, {
+        text: "Keep trying forever",
+        mode: "goal",
+      });
+      expect(started.status).toBe(202);
+      const initial = await api("GET", `/api/threads/${started.body.threadId}/messages?around=${started.body.message.id}&limit=3`);
+      const card = initial.body.messages.find((message: { kind: string }) => message.kind === "goal.run");
+      expect(card).toMatchObject({ id: expect.any(String) });
 
-    await expect.poll(async () => {
-      const page = await api("GET", `/api/threads/${started.body.threadId}/messages?around=${card.id}&limit=1`);
-      return page.body.messages[0]?.goalRun;
-    }, { timeout: 15_000 }).toMatchObject({ status: "limit-reached", turnCount: 13, maxTurns: 13 });
+      await expect.poll(async () => {
+        const page = await api("GET", `/api/threads/${started.body.threadId}/messages?around=${card.id}&limit=1`);
+        return page.body.messages[0]?.goalRun;
+      }, { timeout: 15_000 }).toMatchObject({ status: "limit-reached", turnCount: configuredMaxTurns, maxTurns: configuredMaxTurns });
+    } finally {
+      await api("PUT", "/api/config", { goalRuns: { maxTurns: fixtureGoalMaxTurns } });
+    }
   });
 
   it("never treats a failed provider turn as a completed goal", async () => {

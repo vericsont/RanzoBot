@@ -35,10 +35,10 @@ it("while the Admin sets My Cloud up, the screen says so plainly, with its step,
 it("a Cloud that isn't running says what it is in plain words with its one action; one that doesn't answer says Try again, with no endless spinner", () => {
   const now = new Date(2026, 9, 30, 12).getTime(), day = new Date(2026, 10, 1, 9).getTime();
   expect(homeScreenText({ screen: "ended", name: "My Cloud", deleteAt: day }, now))
-    .toEqual({ title: "My Cloud has ended.", body: "Its files are deleted on November 1.", reason: null, action: "buy", busy: false });
+    .toEqual({ title: "My Cloud has ended.", body: "Its files are deleted on November 1.", reason: null, action: null, busy: false });
   expect(homeScreenText({ screen: "ended" }).title).toBe("This Cloud has ended.");
   expect(homeScreenText({ screen: "ended", name: "Old" }).body, "its files' day only when the Admin names it").toBeNull();
-  expect(homeScreenText({ screen: "checkout", name: "Client B" })).toEqual({ title: "The checkout for Client B wasn't finished.", body: null, reason: null, action: "continue", busy: false });
+  expect(homeScreenText({ screen: "checkout", name: "Client B" })).toEqual({ title: "The checkout for Client B wasn't finished.", body: null, reason: null, action: null, busy: false });
   expect(homeScreenText({ screen: "checkout" }).title).toBe("This checkout wasn't finished.");
   expect(homeScreenText({ screen: "payment", name: "Client B" }))
     .toEqual({ title: "The payment for Client B didn't go through.", body: "Update your card to keep using it.", reason: null, action: "card", busy: false });

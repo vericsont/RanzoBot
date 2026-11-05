@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_GOAL_RUN_MAX_TURNS } from "../shared/group-goal-run.ts";
 import {
   GROUP_GOAL_CONTROL_CLOSE,
   GROUP_GOAL_CONTROL_OPEN,
-  GROUP_GOAL_MAX_TURNS,
   groupGoalAssignmentKey,
   groupGoalCompletionTurnId,
   groupGoalCoordinatorInstructions,
@@ -89,8 +89,8 @@ describe("group goal runs", () => {
       .toBe(groupGoalAssignmentKey("scout-id", "verify the release"));
   });
 
-  it("reserves the final bounded turn for coordinator evaluation", () => {
-    expect(GROUP_GOAL_MAX_TURNS % 2).toBe(1);
+  it("uses an odd default turn limit so the coordinator gets the final evaluation turn", () => {
+    expect(DEFAULT_GOAL_RUN_MAX_TURNS % 2).toBe(1);
   });
 });
 
@@ -123,7 +123,7 @@ const settled = (replyText: string): GoalStepResult => ({ ran: true, replyText, 
 /** Drives the real loop with scripted steps; a step that runs counts one turn, as a claimed member turn does. */
 function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: string }>; steps: Array<GoalStepResult | ((call: number) => GoalStepResult)>; cancelAfter?: number }) {
   const members = options.members ?? [{ id: "solo-id", name: "Solo" }];
-  const run = { goal: "Get every test passing", turnCount: 0, maxTurns: GROUP_GOAL_MAX_TURNS, finished: false };
+  const run = { goal: "Get every test passing", turnCount: 0, maxTurns: DEFAULT_GOAL_RUN_MAX_TURNS, finished: false };
   const calls: Array<{ bot: string; coordinator: boolean; instructions: string }> = [];
   const finished: Array<{ status: GoalRunEnd; detail: string }> = [];
   const progress: string[] = [];
@@ -140,7 +140,7 @@ function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: 
       const scripted = options.steps[Math.min(calls.length - 1, options.steps.length - 1)]!;
       const result = typeof scripted === "function" ? scripted(calls.length) : scripted;
       if (result.ran) run.turnCount += 1;
-      if (options.cancelAfter === calls.length || calls.length > 4 * GROUP_GOAL_MAX_TURNS) cancelled = true;
+      if (options.cancelAfter === calls.length || calls.length > 4 * DEFAULT_GOAL_RUN_MAX_TURNS) cancelled = true;
       return result;
     },
     finish: (status, detail) => {
@@ -178,8 +178,8 @@ describe("one goal-run loop for a room and a one-on-one chat", () => {
       steps: [(call) => settled(envelope({ status: "continue", next: "Solo", instruction: `Try approach ${call}`, detail: "Still going" }))],
     });
     await goal.done;
-    expect(goal.calls).toHaveLength(GROUP_GOAL_MAX_TURNS);
-    expect(goal.finished).toEqual([{ status: "limit-reached", detail: expect.stringContaining(`${GROUP_GOAL_MAX_TURNS}-turn safety limit`) }]);
+    expect(goal.calls).toHaveLength(DEFAULT_GOAL_RUN_MAX_TURNS);
+    expect(goal.finished).toEqual([{ status: "limit-reached", detail: expect.stringContaining(`${DEFAULT_GOAL_RUN_MAX_TURNS}-turn safety limit`) }]);
   });
 
   it("blocks on the spend cap without retrying the refused turn", async () => {

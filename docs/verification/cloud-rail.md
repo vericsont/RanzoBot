@@ -3,7 +3,7 @@
 Once a person has two places or more in all (This computer counts while it is
 a place; their Clouds, their teams' Clouds, servers they connected by hand), a
 narrow rail of circles at the window's left edge switches between them, and ＋
-buys another Cloud or adds a server of their own. With one place there is no
+adds a server of their own or an organization. With one place there is no
 rail, and the window looks as before.
 
 The rail is the window's own chrome, not a page's: this app's page `/rail` in a
@@ -47,11 +47,6 @@ Nothing here needs a real MausBot Cloud account, a payment or the Electron app.
   computer's or a Cloud's; a page learns only that the rail stands beside it. A
   circle opens only a place main listed, by its id, through main's own switch,
   and only from the person's click.
-- Buying another Cloud sends the plan, a name and a swatch to the Admin, which
-  answers with a checkout this app opens in the browser; the sheet then follows
-  the payment and the setup. An Admin that sells one Cloud per account (no
-  `clouds`, `canAdd` false, or no such route) is the calm "One Cloud per
-  account for now".
 - The place on screen tints the top of its sidebar in its colour, faintly
   (`.place-tint`, stronger in dark skins, a thin line with reduced
   transparency, none with forced colours); no colour, no tint. Every place
@@ -96,8 +91,7 @@ pnpm exec vitest run server/workspace-banner.test.ts server/routes/workspace-ban
 
 The account tests answer as a loopback Admin, with and without `clouds`. The
 rail tests load the production preload and check which page gets the list,
-which ids open, and that a circle, ＋, checkout and a colour change act only
-from a click. The colour tests check who may change a place's colour and where
+which ids open, and that a circle, ＋ and a colour change act only from a click. The colour tests check who may change a place's colour and where
 it is kept, from its own page and from the rail's menu, that nothing is saved
 when the Admin refuses, and that the tint follows at once. The banner tests
 run pictures a real encoder made, carrying EXIF, ICC, XMP and text, through
@@ -118,9 +112,7 @@ a Vite preview (`scripts/testing/rail-preview.tsx`), answering the desktop
 bridge a hosted Cloud's page gets: six places, one being set up, one that needs
 its owner, eleven for the list past eight. A headless Chrome in a throwaway
 profile photographs the rail in Advanced and Simple mode (with the place's
-tint), the list past eight, ＋'s two choices, the steps for a server of one's
-own, the plans, the name and colour of a new Cloud and its setup, the person's
-signed-in servers and the steps to connect one, the colour in Settings and in
+tint), the list past eight, ＋'s server pairing form, the person's signed-in servers and the steps to connect one, the colour in Settings and in
 a circle's own menu for an admin and for a team member, and a banner picture
 (drawn by the script and kept through the fixture server's own route) in the
 sidebar and in Settings, each in the Daylight and Midnight skins. The
@@ -147,6 +139,5 @@ The sidebar's button for the rail, with the rail shown and hidden
 
 ![The sidebar's button for the rail on the same spot, the rail shown and hidden](evidence/rail-collapse/after-button-spot-daylight.png)
 
-This is not production qualification: the places and the purchase are the
-preview's fixtures, and no Admin, browser checkout or desktop window is
-involved.
+This is not production qualification: the places are the preview's fixtures,
+and no Admin or desktop window is involved.

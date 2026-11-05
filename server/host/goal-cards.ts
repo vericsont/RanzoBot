@@ -1,7 +1,6 @@
 // The goal run card: one receipt per run in the conversation it runs in, a room's or a one-on-one chat's.
 import type { GroupGoalRunCardData, GroupGoalRunStatus } from "../../shared/group-goal-run.ts";
 import { redactSecretsInText } from "../../shared/redact.ts";
-import { GROUP_GOAL_MAX_TURNS } from "../group-goal-run.ts";
 import { buildNotification, type Notification } from "../notify.ts";
 import type { RoutineManager, RoutineRun } from "../routines.ts";
 import type { BotRecord, Message, Store } from "../store.ts";
@@ -21,6 +20,7 @@ export interface LiveGoalRun {
 
 export interface GoalCardDeps {
   store: Pick<Store, "appendMessage" | "bot" | "messagesFor" | "patchMessage">;
+  maxTurns(): number;
   routines(): Pick<RoutineManager, "finishGoalRun"> | null;
   notify(notification: Notification | null): void;
   routineSourceOwner(run: RoutineRun): { bot: BotRecord } | null;
@@ -43,7 +43,7 @@ export function createGoalCards(deps: GoalCardDeps) {
   const { store } = deps;
 
   function start(threadId: string, coordinator: Pick<BotRecord, "id" | "name" | "color">, goal: string, runId: string): LiveGoalRun {
-    const startedAt = Date.now(), language = conversationLanguage(threadId);
+    const startedAt = Date.now(), language = conversationLanguage(threadId), maxTurns = deps.maxTurns();
     const detail = serverLine(language, "server.teammates.goalCoordinating", { bot: coordinator.name });
     const card = store.appendMessage(threadId, {
       role: "bot",
@@ -57,7 +57,7 @@ export function createGoalCards(deps: GoalCardDeps) {
         coordinatorBotId: coordinator.id,
         coordinatorName: coordinator.name,
         turnCount: 0,
-        maxTurns: GROUP_GOAL_MAX_TURNS,
+        maxTurns,
         detail,
         startedAt,
       },
@@ -69,7 +69,7 @@ export function createGoalCards(deps: GoalCardDeps) {
       coordinatorBotId: coordinator.id,
       coordinatorName: coordinator.name,
       turnCount: 0,
-      maxTurns: GROUP_GOAL_MAX_TURNS,
+      maxTurns,
       startedAt,
       finished: false,
     };

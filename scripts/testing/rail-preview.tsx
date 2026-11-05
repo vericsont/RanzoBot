@@ -239,8 +239,7 @@ if (params.has("railpage")) {
   });
   const sheet = params.get("sheet");
   if (sheet === "connect") void click('[data-rail-place="signed-in:s-render"]');
-  else if (sheet) void click("[data-rail-add]").then(() => (sheet === "server" ? click('[data-place-add-choice="server"]') : sheet === "add" ? undefined : click('[data-place-add-choice="cloud"]')))
-    .then(() => (sheet === "name" ? click("[data-plan-buy='pro']") : undefined));
+  else if (sheet === "server" || sheet === "add") void click("[data-rail-add]");
   const openedSettings = () => new Promise<void>((resolve) => { const tick = () => { if (openSettings) { openSettings(); resolve(); } else setTimeout(tick, 100); }; tick(); });
   const settings = params.get("settings");
   if (settings) {

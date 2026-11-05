@@ -10,9 +10,7 @@ const MACHINE: Record<string, LocaleKey> = {
   failed: "cloudHome.failed",
 };
 
-/** What the screen's one button does: sign in again, open the Plan page, look again, or, for a Cloud that isn't running, buy
- * it again, continue its checkout or update the card (each on the Cloud page in the browser, or its checkout reopened). */
-export type HomeAction = "sign-in" | "manage" | "retry" | "buy" | "continue" | "card";
+export type HomeAction = "sign-in" | "manage" | "retry" | "card";
 
 /** A day as this person reads it: "November 1", with the year once it isn't this one. */
 export function homeDay(at: number, now = Date.now()): string {
@@ -32,8 +30,8 @@ export function homeScreenText(view: HomeView | null, now = Date.now()): { title
   if (view?.screen === "plan") return { title: named("homeScreen.plan", "homeScreen.planNamed"), body: t(MACHINE[view.machine] ?? "cloudHome.failed"), reason: null, action: view.machine === "failed" ? null : "manage", busy: false };
   // A Cloud the Admin's list says isn't running: what it is in plain words, with its one fitting action.
   if (view?.screen === "ended") return { title: named("cloudHome.ended", "cloudHome.endedNamed"), body: view.deleteAt ? t("cloudHome.endedFiles", { date: homeDay(view.deleteAt, now) }) : null,
-    reason: null, action: "buy", busy: false };
-  if (view?.screen === "checkout") return { title: named("cloudHome.checkout", "cloudHome.checkoutNamed"), body: null, reason: null, action: "continue", busy: false };
+    reason: null, action: null, busy: false };
+  if (view?.screen === "checkout") return { title: named("cloudHome.checkout", "cloudHome.checkoutNamed"), body: null, reason: null, action: null, busy: false };
   if (view?.screen === "payment") return { title: named("cloudHome.payment", "cloudHome.paymentNamed"), body: t("cloudHome.paymentBody"), reason: null, action: "card", busy: false };
   if (view?.screen === "waking") return { title: t("homeScreen.waking"), body: null, reason: null, action: null, busy: true };
   if (view?.screen === "moving") return { title: named("homeScreen.moving", "homeScreen.movingNamed"), body: null, reason: null, action: null, busy: true };
@@ -41,7 +39,7 @@ export function homeScreenText(view: HomeView | null, now = Date.now()): { title
 }
 
 const BUTTON: Record<Exclude<HomeAction, "sign-in" | "manage">, LocaleKey> = {
-  retry: "cloudHome.tryAgain", buy: "cloudHome.buyAgain", continue: "cloudHome.continue", card: "cloudHome.updateCard",
+  retry: "cloudHome.tryAgain", card: "cloudHome.updateCard",
 };
 
 /** Remove from list on this screen: asked first, in plain words; then the window goes on without that Cloud. */
@@ -71,9 +69,8 @@ function RemoveFromList({ name, remove }: { name: string; remove: () => Promise<
 /**
  * This computer's own screen in the desktop window while a place can't be shown (My Cloud once it is home, or asked for while
  * the Admin sets it up, a team's Cloud, or another Cloud of the person's own): why, in plain words, and at most one thing to
- * press: Sign in when this device's sign-in has ended, Try again when it didn't answer, or, for a Cloud that isn't running,
- * Buy again, Continue or Update your card, with Remove from list for one its owner may take off their list. It looks again by
- * itself (main's timer), when the network comes back and when the window comes to the front.
+ * press: Sign in when this device's sign-in has ended, Try again when it didn't answer, or Update your card. A Cloud its
+ * owner may remove has Remove from list. It looks again when the network comes back and when the window comes to the front.
  */
 export function HomeScreen({ bridge, manage }: { bridge: HomeBridge; manage?: () => Promise<void> }) {
   const [view, setView] = useState<HomeView | null>(null);
@@ -90,11 +87,9 @@ export function HomeScreen({ bridge, manage }: { bridge: HomeBridge; manage?: ()
   }, [bridge]);
   const text = homeScreenText(view);
   const act = (action: () => Promise<unknown>) => { setFailed(false); void action().catch(() => setFailed(true)); };
-  // Its checkout's page again when this app keeps it (the Cloud it is buying), else the Cloud page, where it can be paid.
-  const reopen = window.ogb?.cloudAdd?.reopen;
   const run: Partial<Record<HomeAction, () => Promise<unknown>>> = {
     retry: () => bridge.retry().then((next) => setView(next)),
-    ...(manage ? { manage, buy: manage, card: manage, continue: async () => { if (!(reopen && await reopen().catch(() => false))) await manage(); } } : {}),
+    ...(manage ? { manage, card: manage } : {}),
   };
   const button = text.action && text.action !== "sign-in" && text.action !== "manage" ? text.action : null;
   const removable = (view?.screen === "ended" || view?.screen === "payment") && view.removable === true && typeof bridge.remove === "function";

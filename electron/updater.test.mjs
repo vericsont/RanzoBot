@@ -16,10 +16,10 @@ const CLOUD = "https://home-7f3k2.fly.dev";
 const OTHER = "https://bots.example.test";
 const OWN = "https://omb-c-a.fly.dev";
 
-const fixture = vi.hoisted(() => ({ autoUpdater: null, handlers: new Map() }));
+const fixture = vi.hoisted(() => ({ appName: "OpenMausBot", autoUpdater: null, handlers: new Map() }));
 
 vi.mock("electron", () => ({
-  app: { isPackaged: true, getPath: () => "/unused-updater-test-log", getVersion: () => "1.0.0", hide: vi.fn() },
+  app: { isPackaged: true, getName: () => fixture.appName, getPath: () => "/unused-updater-test-log", getVersion: () => "1.0.0", hide: vi.fn() },
   clipboard: { writeText: vi.fn() },
   ipcMain: { handle: (name, handler) => fixture.handlers.set(name, handler) },
 }));
@@ -120,6 +120,7 @@ const settle = async () => {
 };
 
 beforeEach(() => {
+  fixture.appName = "OpenMausBot";
   localOriginModule.setLocalOrigin(LOCAL);
   vi.useFakeTimers();
 });
@@ -213,6 +214,14 @@ it("another Cloud of the person's own gets the update bridge as My Cloud's page 
   expect(has(OTHER, "vps")).toBe(false);
   rule.signedIn({ status: "connected", account: { id: "a1" }, machine: { origin: CLOUD, status: "ready" }, clouds: [cloud({ id: "c-home", origin: CLOUD, primary: true }), cloud({ runsOn: "server", managed: false })] });
   expect(has(OWN, "own")).toBe(false);
+});
+
+it("does not check upstream releases for RanzoBot", async () => {
+  fixture.appName = "RanzoBot";
+  const { updater, autoUpdater } = await load(() => false);
+  updater.startUpdater();
+  await vi.advanceTimersByTimeAsync(15_000);
+  expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
 });
 
 it("a downloaded update installs when the app quits, except a system package, which is the person's to install", async () => {

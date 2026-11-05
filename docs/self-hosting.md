@@ -783,6 +783,16 @@ folder holds 512 MB. A team fills that sooner: set
 `OMB_ATTACHMENTS_MAX_BYTES` in the server's environment and restart, for
 example `OMB_ATTACHMENTS_MAX_BYTES=4294967296` for 4 GB.
 
+## Goal run turn limit
+
+Goal runs default to 13 turns. Change the cap in **Settings → General → Goal
+run turn limit**; it accepts odd numbers from 1 to 999 and applies to new runs.
+The odd limit reserves the final turn for the coordinator to evaluate completion.
+For the default before anyone changes Settings, set `OMB_GOAL_MAX_TURNS` to an
+odd number from 1 to 999 in the server environment; a saved Settings value takes
+precedence. With Docker Compose, put it in `.env` and run
+`docker compose up -d omb` to apply it. Invalid values use the default.
+
 ## Putting a proxy in front
 
 Any reverse proxy works, given three things:

@@ -5,7 +5,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { HostTurnResult } from "../coordinator.ts";
-import { GROUP_GOAL_CONTROL_CLOSE, GROUP_GOAL_CONTROL_OPEN, GROUP_GOAL_MAX_TURNS, GROUP_GOAL_WAIT_MAX_MS, type GoalRunEnd } from "../group-goal-run.ts";
+import { GROUP_GOAL_CONTROL_CLOSE, GROUP_GOAL_CONTROL_OPEN, GROUP_GOAL_WAIT_MAX_MS, type GoalRunEnd } from "../group-goal-run.ts";
+import { DEFAULT_GOAL_RUN_MAX_TURNS } from "../../shared/group-goal-run.ts";
 import type { BotRecord, Message, TaskRecord } from "../store.ts";
 import type { LiveGoalRun } from "./goal-cards.ts";
 import { createGoalTurns, type GoalLeadTurn } from "./goal-turns.ts";
@@ -29,7 +30,7 @@ function goalChat(startTurn: (call: number, lead: GoalLeadTurn, settle: (outcome
     coordinatorBotId: "b",
     coordinatorName: "Solo",
     turnCount: 0,
-    maxTurns: GROUP_GOAL_MAX_TURNS,
+    maxTurns: DEFAULT_GOAL_RUN_MAX_TURNS,
     startedAt: 0,
     finished: false,
   };

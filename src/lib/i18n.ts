@@ -68,13 +68,22 @@ let active = "en";
 let activePack: LocalePack = en;
 let switches = 0;
 
+const PRODUCT_COPY_KEYS = new Set<LocaleKey>([
+  "whatsNew.team.bodyInbox", "whatsNew.team.picture", "cloudCancel.expected",
+  "settings.talk.title", "settings.talk.subtitle", "settings.talk.aria",
+  "room.panel.responder.auto", "room.panel.responder.autoOption",
+]);
+const UPSTREAM_VERSION_KEYS = new Set<LocaleKey>(["cloudSend.move.updatingNamed", "grokMove.error.newerVersion"]);
+
 export function tFromServer(key: string | undefined, fallback: string | undefined): string | undefined {
   return key && Object.hasOwn(en, key) ? t(key as LocaleKey) : fallback;
 }
 
 /** `{app}` is the product's name as a person reads it (productName) unless `params` names it. */
 export function t(key: LocaleKey, params?: Record<string, string | number>): string {
-  const template = activePack[key] ?? en[key];
+  let template = activePack[key] ?? en[key];
+  if (!UPSTREAM_VERSION_KEYS.has(key)) template = template.replaceAll("OpenMausBot", productName());
+  if (PRODUCT_COPY_KEYS.has(key)) template = template.replaceAll("MausBot", productName());
   if (!params && !template.includes("{app}")) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) =>
     params && name in params ? String(params[name]) : name === "app" ? productName() : match,

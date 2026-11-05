@@ -42,37 +42,15 @@ const button = (label: string) => [...document.querySelectorAll("button")].find(
 const click = async (target: Element | null | undefined) => { expect(target).toBeTruthy(); await act(async () => { (target as HTMLElement).click(); }); await settle(); };
 
 describe("the room card", () => {
-  it("says what ran short and what fixes it, and its Upgrade goes through the usual preview and confirmation, then offers Restart now", async () => {
+  it("reports resource pressure without pricing or upgrade actions", async () => {
     const plan = bridge();
     await show(plan);
-    expect(card()?.getAttribute("data-cloud-room-card")).toBe("upgrade");
-    expect(text()).toBe("This Cloud is short on room3 tasks waited 6 minutes for memory today.Pro has twice the memory. $49 a month. Today you pay only for the rest of this month.UpgradeNot now");
-    await click(button("Upgrade"));
-    expect(plan.upgradePreview).toHaveBeenCalledExactlyOnceWith("pro", "app_room");
+    expect(card()?.getAttribute("data-cloud-room-card")).toBe("tip");
+    expect(text()).toContain("3 tasks waited 6 minutes for memory today.");
+    expect(text()).not.toContain("$49");
+    expect(button("Upgrade")).toBeUndefined();
+    expect(plan.upgradePreview).not.toHaveBeenCalled();
     expect(plan.upgrade).not.toHaveBeenCalled();
-    await click(button("Upgrade to Pro"));
-    expect(plan.upgrade).toHaveBeenCalledExactlyOnceWith("pro", "app_room");
-    expect(card()?.getAttribute("data-cloud-room-card")).toBe("upgraded");
-    expect(text()).toContain("You're on Pro now. This Cloud gets its new size the next time it's not busy.");
-    await click(button("Restart now"));
-    expect(plan.restartNow).toHaveBeenCalledOnce();
-    expect(text()).toBe("Restarting this Cloud with its new size. It's back in about a minute.");
-  });
-
-  it("forgets an upgrade once the session that made it ends, so Restart now never reaches another account's Cloud", async () => {
-    const plan = bridge();
-    await show(plan);
-    await click(button("Upgrade"));
-    await click(button("Upgrade to Pro"));
-    expect(button("Restart now")).toBeTruthy();
-    snapshot = { status: "none" };
-    await act(async () => { window.dispatchEvent(new Event("focus")); });
-    await settle();
-    snapshot = { status: "paid", tier: "starter", usage };
-    await act(async () => { window.dispatchEvent(new Event("focus")); });
-    await settle();
-    expect(button("Restart now")).toBeUndefined();
-    expect(card()).toBeNull();
   });
 
   it("shows no offer whose plan the session's upgrades don't list: its Upgrade could never go through", async () => {
@@ -90,7 +68,7 @@ describe("the room card", () => {
     await act(async () => { root.render(createElement(CloudRoomCard)); });
     await settle();
     expect(card()).not.toBeNull();
-    await click(button("Not now"));
+    await click(button("Got it"));
     expect(plan.roomNotNow).toHaveBeenCalledExactlyOnceWith("offer-1");
     expect(card()).toBeNull();
     expect(plan.upgradePreview).not.toHaveBeenCalled();

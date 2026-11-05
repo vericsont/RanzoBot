@@ -87,7 +87,7 @@ export function createChiefPatch(maus: DefaultBotFields, chief: { id: string } |
   return { welcomed: true, ...(maus.sidebarHidden ? { sidebarHidden: false as const } : {}), ...(chief ? {} : { chiefOfStaff: true as const }) };
 }
 
-export type SetupStep = "ai" | "bots" | "apps" | "phone" | "cloud";
+export type SetupStep = "ai" | "bots" | "apps" | "phone";
 
 /** What MausBot's intro offers to set up in Advanced mode, each optional: only what is still to do, and on a place with
  * bots of the person's own only an AI, which nothing works without. On a Team Cloud the team's admins set those up. */
@@ -97,11 +97,10 @@ export function setupSteps(input: { aiReady: boolean; ownBots: number; onCloud: 
   return [
     ...(input.aiReady ? [] : ["ai" as const]),
     ...(fresh ? ["bots" as const, "apps" as const, "phone" as const] : []),
-    ...(fresh && !input.onCloud && !input.remote ? ["cloud" as const] : []),
   ];
 }
 
-export type IntroChip = "ai" | "apps" | "import" | "phone" | "cloud";
+export type IntroChip = "ai" | "apps" | "import" | "phone";
 
 export interface IntroFacts {
   aiReady: boolean;
@@ -129,7 +128,6 @@ export function introChips(input: IntroFacts): IntroChip[] {
     ...(fresh && !input.appsConnected ? ["apps" as const] : []),
     ...(fresh && input.importFound ? ["import" as const] : []),
     ...(fresh && !input.phonePaired ? ["phone" as const] : []),
-    ...(fresh && !input.onCloud && !input.remote ? ["cloud" as const] : []),
   ];
 }
 

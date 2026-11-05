@@ -12,8 +12,8 @@ const CHOSEN_NAME = "OpenMausBot at login";
 /** Desktop Entry Exec quoting: the path in double quotes, with ", `, $ and \ escaped. */
 const quoted = (value) => `"${value.replace(/["`$\\]/g, (match) => `\\${match}`)}"`;
 
-export function autostartEntry(exec, { lending = true } = {}) {
-  return ["[Desktop Entry]", "Type=Application", "Name=OpenMausBot", `Exec=${quoted(exec)}${lending ? ` ${HIDDEN_ARG}` : ""}`, "NoDisplay=true",
+export function autostartEntry(exec, { lending = true, name = "OpenMausBot" } = {}) {
+  return ["[Desktop Entry]", "Type=Application", `Name=${name}`, `Exec=${quoted(exec)}${lending ? ` ${HIDDEN_ARG}` : ""}`, "NoDisplay=true",
     "X-GNOME-Autostart-enabled=true", ...(lending ? [MARK] : []), ""].join("\n");
 }
 
@@ -24,8 +24,9 @@ export function autostartEntry(exec, { lending = true } = {}) {
  * `chosen()` and `choose(on)`: the person's own login item, which opens the window and which lending never removes; on
  * Windows, whether Windows starts the app at sign-in at all, as its Startup apps list shows.
  */
-export function createOpenAtLogin({ app, file, platform = process.platform, env = process.env, home, argv = process.argv, execPath = process.execPath }) {
-  const autostart = path.join(env.XDG_CONFIG_HOME || path.join(home, ".config"), "autostart", "openmausbot.desktop");
+export function createOpenAtLogin({ app, file, platform = process.platform, env = process.env, home, argv = process.argv, execPath = process.execPath, ranzoBot = false }) {
+  const name = ranzoBot ? "RanzoBot" : "OpenMausBot";
+  const autostart = path.join(env.XDG_CONFIG_HOME || path.join(home, ".config"), "autostart", ranzoBot ? "ranzobot.desktop" : "openmausbot.desktop");
   const saved = () => { try { return JSON.parse(fs.readFileSync(file, "utf8")) ?? {}; } catch { return {}; } };
   const store = (fields) => { try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify({ ...saved(), ...fields })); } catch {} };
   const added = () => saved().added === true;
@@ -42,7 +43,7 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
         if (platform === "linux") {
           if (on && !fs.existsSync(autostart)) {
             fs.mkdirSync(path.dirname(autostart), { recursive: true });
-            fs.writeFileSync(autostart, autostartEntry(env.APPIMAGE || execPath));
+            fs.writeFileSync(autostart, autostartEntry(env.APPIMAGE || execPath, { name }));
           } else if (!on && ours()) fs.rmSync(autostart, { force: true });
           return;
         }
@@ -71,12 +72,12 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
       if (platform === "linux") {
         if (on) {
           fs.mkdirSync(path.dirname(autostart), { recursive: true });
-          fs.writeFileSync(autostart, autostartEntry(env.APPIMAGE || execPath, { lending: false }));
+          fs.writeFileSync(autostart, autostartEntry(env.APPIMAGE || execPath, { lending: false, name }));
         } else if (!ours()) fs.rmSync(autostart, { force: true });
         return;
       }
       if (platform === "win32") {
-        if (on) app.setLoginItemSettings({ openAtLogin: true, args: [], name: CHOSEN_NAME });
+        if (on) app.setLoginItemSettings({ openAtLogin: true, args: [], name: ranzoBot ? "RanzoBot at login" : CHOSEN_NAME });
         else for (const item of windowsStartsApp()) app.setLoginItemSettings({ openAtLogin: false, args: item.args ?? [], name: item.name });
         store({ declined: !on });
         return;

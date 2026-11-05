@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { botThreadLimitText, defaultBotThreads, maxConcurrentBotThreads, maxConcurrentChildThreads } from "./bot-thread-limits.ts";
 import type { JsonValue } from "./schema.ts";
+import { DEFAULT_GOAL_RUN_MAX_TURNS } from "../shared/group-goal-run.ts";
 
 import { cacheUntilConfigChanges,
   changedInstanceIds,
@@ -22,6 +23,7 @@ import { cacheUntilConfigChanges,
   parseStoredConfig,
   persistableInstanceConfigs,
   roomTurnTimeoutMinutes,
+  groupGoalMaxTurns,
   mcpCallTimeoutMinutes,
   threadEventLogMaxBytes,
   threadEventLogRetentionDays,
@@ -538,6 +540,17 @@ describe("configuration boundaries", () => {
       );
     },
   );
+
+  it("accepts only odd goal-run limits and gives saved settings precedence over the environment", () => {
+    expect(parseStoredConfig({ goalRuns: { maxTurns: 21 } }).goalRuns).toEqual({ maxTurns: 21 });
+    expect(groupGoalMaxTurns({}, {})).toBe(DEFAULT_GOAL_RUN_MAX_TURNS);
+    expect(groupGoalMaxTurns({}, { OMB_GOAL_MAX_TURNS: "15" })).toBe(15);
+    expect(groupGoalMaxTurns({ goalRuns: { maxTurns: 21 } }, { OMB_GOAL_MAX_TURNS: "15" })).toBe(21);
+    expect(parseConfigPatch({ goalRuns: { maxTurns: 21 } })).toEqual({ goalRuns: { maxTurns: 21 } });
+    for (const maxTurns of [0, 2, 14, 1.5, 1001, "21", null]) {
+      expect(() => parseConfigPatch({ goalRuns: { maxTurns } })).toThrow("goalRuns.maxTurns");
+    }
+  });
 
   it("accepts a persisted MCP call timeout and supplies the legacy default", () => {
     expect(parseStoredConfig({ mcp: { callTimeoutMinutes: 30 } })).toEqual({

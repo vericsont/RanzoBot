@@ -132,12 +132,11 @@ const submit = async (form: Element | null) => {
   await act(async () => { (form as HTMLFormElement).requestSubmit(); await Promise.resolve(); await Promise.resolve(); });
 };
 
-it("＋ offers buying a Cloud or adding the person's own server: a box to paste its pairing link, sent to main's own Connect dialog", async () => {
+it("＋ opens the pairing link form directly without offering a Cloud purchase", async () => {
   await mount(createElement(PlacesRail));
   await click(host.querySelector("[data-rail-add]"));
   const sheet = document.querySelector("[data-place-add-sheet]")!;
-  expect([...sheet.querySelectorAll("[data-place-add-choice]")].map((choice) => choice.getAttribute("data-place-add-choice"))).toEqual(["cloud", "server"]);
-  await click(sheet.querySelector('[data-place-add-choice="server"]'));
+  expect(sheet.querySelector('[data-place-add-choice="cloud"]')).toBeNull();
   const form = document.querySelector('[data-place-add="own-server"]')!;
   expect(form.textContent).toContain("Paste pairing link");
   expect(form.textContent, "no install commands: the server's Settings shows its link").not.toContain("npx");
@@ -153,7 +152,6 @@ it("＋ offers buying a Cloud or adding the person's own server: a box to paste 
 it("a pasted link main can't open says so and keeps the sheet; cancelling main's Connect keeps it too", async () => {
   await mount(createElement(PlacesRail));
   await click(host.querySelector("[data-rail-add]"));
-  await click(document.querySelector('[data-place-add-choice="server"]'));
   const form = document.querySelector('[data-place-add="own-server"]')!;
   await type(form.querySelector("[data-own-server-link]"), "not a link");
   workspaces.add.mockRejectedValueOnce(new Error("Enter an HTTPS server address or a full pairing link."));
@@ -175,7 +173,7 @@ it("＋ for the account a Team plan's organizations are billed to: New organizat
   await mount(createElement(PlacesRail));
   await click(host.querySelector("[data-rail-add]"));
   const sheet = document.querySelector("[data-place-add-sheet]")!;
-  expect([...sheet.querySelectorAll("[data-place-add-choice]")].map((choice) => choice.getAttribute("data-place-add-choice"))).toEqual(["organization", "cloud", "server"]);
+  expect([...sheet.querySelectorAll("[data-place-add-choice]")].map((choice) => choice.getAttribute("data-place-add-choice"))).toEqual(["organization", "server"]);
   await click(sheet.querySelector('[data-place-add-choice="organization"]'));
   await act(async () => { await Promise.resolve(); });
   const form = document.querySelector('[data-place-add="organization"]')!;
@@ -233,17 +231,6 @@ it("New organization says plainly why it can't be added: the plan has as many as
   await act(async () => { await Promise.resolve(); });
   expect(again.querySelector("[data-org-problem]")?.textContent).toBe("Nothing was added. Try again in a moment.");
   expect(document.querySelector("[data-place-add-sheet]"), "the sheet stays open to try again").toBeTruthy();
-});
-
-it("Buy a Cloud, for someone whose Admin sells one Cloud per account: the calm word, never an error", async () => {
-  await mount(createElement(PlacesRail));
-  await click(host.querySelector("[data-rail-add]"));
-  await click(document.querySelector('[data-place-add-choice="cloud"]'));
-  await act(async () => { await Promise.resolve(); });
-  const flow = document.querySelector('[data-cloud-add="extra-one"]')!;
-  expect(flow.textContent).toContain("One Cloud per account for now");
-  expect(flow.textContent).toContain("You have My Cloud.");
-  expect(cloudAdd.sheet).toHaveBeenCalledWith(true);
 });
 
 it("a circle's letters and words", () => {

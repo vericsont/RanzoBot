@@ -98,14 +98,14 @@ describe("a published page's card", () => {
     } finally { root.unmount(); }
   });
 
-  it("at the free limit, says so in the person's words and opens the app's Get Cloud flow", () => {
+  it("at the free limit, shows the limit without a purchase action", () => {
     desktop({ cloudAccount: {} });
     const { container, root } = render(page({ state: "limit", title: "Bake sale", plan: "free", upgrade: true, usage: { pages: 5, limit: 5 }, message: "server words" }));
     try {
-      expect(container.textContent).toContain("You’ve used your 5 free pages. MausBot Cloud gives you more, and pages without the badge.");
+      expect(container.textContent).toContain("You’ve used all 5 pages on your Cloud plan. Unpublish a page to make room.");
       expect(container.textContent).toContain("5 of 5 pages");
-      container.querySelector("button")!.click();
-      expect(dispatch).toHaveBeenCalledWith({ type: "openCloudAdd", source: "app_pages" });
+      expect(container.querySelectorAll("button")).toHaveLength(0);
+      expect(dispatch).not.toHaveBeenCalled();
     } finally { root.unmount(); }
   });
 

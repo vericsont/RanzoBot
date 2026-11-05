@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowUpRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import type { CloudPlanBridge, CloudPlanSnapshot } from "../../electron/cloud-account.mjs";
 import { usageBridge, useUpgrade, NoteLine, type UpgradeUi } from "./CloudUsageMeter";
@@ -17,7 +17,7 @@ const RESTART_NOTE: Record<Exclude<Restart, "asking">, string> = {
 
 /** The card as it looks: the cause, the plan that fixes it with its price (or a tip on the top plan), Upgrade and Not now;
  * after an upgrade, Restart now. */
-export function CloudRoomCardView({ view, upgrade, browser, upgraded, restart, onNotNow, onRestart, children }: {
+export function CloudRoomCardView({ view, upgrade, upgraded, restart, onNotNow, onRestart, children }: {
   view: RoomCardView | null; upgrade: UpgradeUi; browser: boolean; upgraded: string | null; restart: Restart | null;
   onNotNow: () => void; onRestart: () => void; children?: ReactNode;
 }) {
@@ -38,24 +38,12 @@ export function CloudRoomCardView({ view, upgrade, browser, upgraded, restart, o
   }
   if (!view) return <>{children}</>;
   return (
-    <section aria-labelledby="cloud-room-card-title" data-cloud-room-card={view.offer ? "upgrade" : "tip"} data-room-cause={view.kind}
+    <section aria-labelledby="cloud-room-card-title" data-cloud-room-card="tip" data-room-cause={view.kind}
       className="mb-2 rounded-xl border border-hairline/50 bg-card p-3 text-ink shadow-sm">
       <h2 id="cloud-room-card-title" className="text-[13px] font-semibold leading-5">{view.title}</h2>
       <p className="mt-1 text-[12px] leading-relaxed text-ink">{view.cause}</p>
-      {view.offer ? <>
-        <p className="mt-1.5 text-[12px] leading-relaxed text-ink-secondary">{view.offer.text} {view.offer.price}</p>
-        <div className="mt-2.5 flex items-center gap-2">
-          <button type="button" className="ui-button ui-button-primary min-w-0 flex-1 justify-center gap-1.5" disabled={upgrade.busy !== null} onClick={() => upgrade.onUpgrade(view.offer!.tier)}>
-            {upgrade.busy === "preview" && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
-            {t("roomCard.upgrade")}
-            {browser && <ArrowUpRight size={13} aria-hidden="true" />}
-          </button>
-          <button type="button" className="ui-button min-w-0 flex-1 justify-center" disabled={upgrade.busy !== null} onClick={onNotNow}>{t("roomCard.notNow")}</button>
-        </div>
-      </> : <>
-        <p className="mt-1.5 text-[12px] leading-relaxed text-ink-secondary">{view.tip}</p>
-        <button type="button" className="ui-button mt-2.5 w-full justify-center" onClick={onNotNow}>{t("roomCard.gotIt")}</button>
-      </>}
+      {view.tip && <p className="mt-1.5 text-[12px] leading-relaxed text-ink-secondary">{view.tip}</p>}
+      <button type="button" className="ui-button mt-2.5 w-full justify-center" onClick={onNotNow}>{t("roomCard.gotIt")}</button>
       {upgrade.note && <div className="mt-2"><NoteLine note={upgrade.note} /></div>}
       {children}
     </section>

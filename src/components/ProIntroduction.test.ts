@@ -47,30 +47,11 @@ const press = (label: string, Component = ProSettingsCard) => {
   expect(button, label).toBeTruthy(); button!.props.onClick!();
 };
 
-it("for someone who may buy: what Cloud does, the Admin's lowest price and money-back; Start free trial and Compare plans both open the sheet, never the website", async () => {
-  const html = await card(signedOut);
-  for (const text of ["MausBot Cloud", "Keeps your bots and routines running 24/7, even when this computer is off.", "MausBot Cloud plans from $15/month + tax.",
-    "14-day money-back on every plan.", "OpenMausBot on this computer stays free and open source.", "Compare plans", "Start free trial", "Sign in to your Cloud plan"]) expect(html).toContain(text);
-  for (const gone of ["OMB", "$89", "launch price", "New features first", "Get Pro", "OpenMausBot Pro", "OpenMausBot Cloud"]) expect(html).not.toContain(gone);
-  press("Start free trial");
-  expect(f.dispatch).toHaveBeenCalledWith({ type: "openCloudAdd", source: "app_settings" });
-  f.dispatch.mockClear();
-  press("Compare plans"); await flush();
-  expect(f.dispatch).toHaveBeenCalledExactlyOnceWith({ type: "openCloudAdd", source: "app_settings" });
-  expect(openExternal).not.toHaveBeenCalled();
-  press("Sign in to your Cloud plan");
-  expect(f.dispatch).toHaveBeenCalledWith({ type: "openCloudAdd", source: "app_settings", signIn: true });
-  expect(html).toMatch(/class="ui-button ui-button-primary"[^>]*>Start free trial</);
-});
-
-it("without a trial it says Add a Cloud; signed in, no sign-in link; without the Admin's numbers, no price and no money-back", async () => {
-  offer = { plans: PLANS.map(({ trialDays: _days, ...rest }) => rest), recommended: "pro" };
-  const html = await card(plan());
-  expect(html).toContain(">Add a Cloud<"); expect(html).not.toContain("Start free trial");
-  expect(html).not.toContain("Sign in to your Cloud plan"); expect(html).not.toContain("money-back");
-  offer = null;
-  const unknown = await card(plan());
-  expect(unknown).toContain(">Add a Cloud<"); expect(unknown).not.toContain("plans from");
+it("does not offer a purchase to signed-out or free accounts", async () => {
+  expect(await card(signedOut)).toBe("");
+  expect(await card(plan())).toBe("");
+  expect(bridge.offer).not.toHaveBeenCalled();
+  expect(f.dispatch).not.toHaveBeenCalled();
 });
 
 it("someone with a plan sees that plan and the way to it, never an offer, and Cloud is never asked", async () => {

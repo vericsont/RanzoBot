@@ -72,6 +72,12 @@ describe("mascot facial feature colors", () => {
 });
 
 describe("BotAvatar's two avatar outcomes", () => {
+  it("uses the RanzoBot mark for the uncustomized default helper", () => {
+    expect(renderBot({ defaultBot: {}, color: "chrome", name: "RanzoBot" })).toContain('src="/app-icon.svg"');
+    expect(renderBot({ defaultBot: {}, color: "chrome", mascotBody: "star" })).not.toContain('src="/app-icon.svg"');
+    expect(renderBot({ defaultBot: {}, color: "green" })).not.toContain('src="/app-icon.svg"');
+  });
+
   it("zooms and positions a custom image inside its crop", () => {
     const markup = renderBot({
       avatarUrl: "/api/attachments/cat.webp",

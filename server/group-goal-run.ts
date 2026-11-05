@@ -1,8 +1,6 @@
 import type { GroupGoalRunStatus } from "../shared/group-goal-run.ts";
 import type { GroupDefaultResponder } from "./store.ts";
 
-// Odd so the final bounded turn always falls to the coordinator for the completion decision.
-export const GROUP_GOAL_MAX_TURNS = 13;
 export const GROUP_GOAL_WAIT_MAX_MS = Math.max(1_000, Number(process.env.OMB_GOAL_WAIT_MAX_MS) || 30 * 60_000);
 const GROUP_GOAL_MAX_WAIT_EXHAUSTIONS = 3;
 export const GROUP_GOAL_CONTROL_OPEN = "<openmaus-goal>";

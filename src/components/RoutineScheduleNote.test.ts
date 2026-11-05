@@ -7,9 +7,9 @@ describe("where a routine runs, said where it is scheduled", () => {
     expect(schedulePlace({ cloudHome: true, local: false, plan: null, ready: false, offersAllowed: true })).toEqual({ kind: "cloud" });
     expect(schedulePlace({ cloudHome: false, local: false, plan: free, ready: false, offersAllowed: true })).toEqual({ kind: "server" });
   });
-  it("This computer: Add a Cloud for someone who may buy where it is offered, Open the Cloud once it is ready, else the note alone", () => {
-    expect(schedulePlace({ cloudHome: false, local: true, plan: free, ready: false, offersAllowed: true })).toEqual({ kind: "local", next: "add-cloud" });
-    expect(schedulePlace({ cloudHome: false, local: true, plan: { kind: "signed-out" }, ready: false, offersAllowed: true })).toEqual({ kind: "local", next: "add-cloud" });
+  it("This computer: Open an existing Cloud once it is ready, else the note alone", () => {
+    expect(schedulePlace({ cloudHome: false, local: true, plan: free, ready: false, offersAllowed: true })).toEqual({ kind: "local", next: null });
+    expect(schedulePlace({ cloudHome: false, local: true, plan: { kind: "signed-out" }, ready: false, offersAllowed: true })).toEqual({ kind: "local", next: null });
     expect(schedulePlace({ cloudHome: false, local: true, plan: free, ready: false, offersAllowed: false })).toEqual({ kind: "local", next: null });
     expect(schedulePlace({ cloudHome: false, local: true, plan: paid, ready: true, offersAllowed: true })).toEqual({ kind: "local", next: "open-cloud" });
     expect(schedulePlace({ cloudHome: false, local: true, plan: paid, ready: false, offersAllowed: true })).toEqual({ kind: "local", next: null });

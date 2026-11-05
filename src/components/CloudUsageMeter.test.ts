@@ -44,21 +44,21 @@ describe("the sidebar card", () => {
     const all = { usage: current, meters: [current.meters[0]!], band: "near" as const, upgrade: { busy: null, note: null, onUpgrade }, onHide, onSeeAll, ...props };
     return { html: renderToStaticMarkup(createElement(CloudUsageCardView, all)), tree: nodes(CloudUsageCardView(all)), onUpgrade, onHide, onSeeAll };
   };
-  it("shows the tight allowance, used of included with its bar, when it starts over, Upgrade and a quiet hide", () => {
+  it("shows the tight allowance, used of included with its bar, when it starts over and a quiet hide", () => {
     const { html, tree, onUpgrade, onHide, onSeeAll } = card();
-    for (const text of ["You&#x27;re close to your plan&#x27;s limit", "Cloud desktop hours", "285 of 300 hours", "Resets on Nov 1.", "Upgrade to Max", "See all usage"]) expect(html).toContain(text);
+    for (const text of ["You&#x27;re close to your plan&#x27;s limit", "Cloud desktop hours", "285 of 300 hours", "Resets on Nov 1.", "See all usage"]) expect(html).toContain(text);
     expect(html).toContain('role="progressbar"'); expect(html).toContain('aria-valuenow="95"'); expect(html).toContain('data-band="near"');
     expect(html).not.toContain("Voice replies");
-    button(tree, "Upgrade to Max")!.props.onClick();
-    expect(onUpgrade).toHaveBeenCalledOnce();
+    expect(button(tree, "Upgrade")).toBeUndefined();
+    expect(onUpgrade).not.toHaveBeenCalled();
     tree.find(node => node.type === "button" && node.props["aria-label"] === "Hide for now")!.props.onClick();
     button(tree, "See all usage")!.props.onClick();
     expect([onHide, onSeeAll].map(fn => fn.mock.calls.length)).toEqual([1, 1]);
   });
-  it("says a limit is reached; with no in-app upgrade it opens the Cloud page; on the top plan there is no Upgrade", () => {
+  it("says a limit is reached without an upgrade action", () => {
     expect(card({ band: "full", meters: [{ kind: "x", used: 5_000, max: 5_000, usedUp: true }] }).html).toContain("You&#x27;ve reached your plan&#x27;s limit");
     const browser = card({ usage: usage({ upgrades: [] }) });
-    expect(button(browser.tree, "Upgrade")).toBeTruthy(); expect(browser.html).not.toContain("Upgrade to");
+    expect(button(browser.tree, "Upgrade")).toBeUndefined(); expect(browser.html).not.toContain("Upgrade to");
     const top = card({ usage: usage({ tier: "max", upgrades: [] }) });
     expect(top.html).not.toContain(">Upgrade"); expect(top.html).toContain("See all usage");
   });
@@ -69,13 +69,14 @@ describe("Settings → General", () => {
     const onUpgrade = vi.fn(), all = { usage: current, upgrade: { busy: null, note: null, onUpgrade } };
     return { html: renderToStaticMarkup(createElement(CloudUsageSettingsView, all)), tree: nodes(CloudUsageSettingsView(all)), onUpgrade };
   };
-  it("lists every allowance with its meter and the plan, and offers each bigger plan", () => {
+  it("lists every allowance without pricing or upgrade actions", () => {
     const { html, tree, onUpgrade } = section(usage({ tier: "starter", upgrades: [{ tier: "max", amount: 9900 }, { tier: "pro", amount: 4900 }] }));
     for (const text of ["MausBot Cloud usage", "What your Starter plan includes this month", "285 of 300 hours", "12,000 of 60,000 characters", "41.2 of 100 GB",
-      "Resets on Nov 1.", "Upgrade to Pro · $49/month", "Upgrade to Max · $99/month"]) expect(html).toContain(text);
+      "Resets on Nov 1."]) expect(html).toContain(text);
     expect(html.match(/role="progressbar"/g)).toHaveLength(3);
-    button(tree, "Upgrade to Max")!.props.onClick();
-    expect(onUpgrade).toHaveBeenCalledWith("max");
+    expect(button(tree, "Upgrade")).toBeUndefined();
+    expect(html).not.toContain("$49");
+    expect(onUpgrade).not.toHaveBeenCalled();
   });
   it("on Max says it is the top plan, and a team's plan changes by writing to us", () => {
     expect(section(usage({ tier: "max", upgrades: [] })).html).toContain("You&#x27;re on the top plan.");

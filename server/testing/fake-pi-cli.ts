@@ -342,6 +342,10 @@ function handle(cmd: any) {
           appendFileSync(process.env.FAKE_PI_DUMP, JSON.stringify({ setModel: { provider: cmd.provider, modelId: cmd.modelId } }) + "\n");
         } catch {}
       }
+      if (process.env.FAKE_PI_SET_MODEL_ERROR) {
+        send({ type: "response", command: "set_model", success: false, error: process.env.FAKE_PI_SET_MODEL_ERROR });
+        return;
+      }
       send({ type: "response", command: "set_model", success: true, data: { id: cmd.modelId, provider: cmd.provider } });
       return;
     }

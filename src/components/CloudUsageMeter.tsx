@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, Gauge, Loader2, X } from "lucide-react";
+import { Gauge, X } from "lucide-react";
 
 import type { CloudPlanBridge, CloudPlanSnapshot, CloudUpgradePreview, CloudUpgradeRefusal } from "../../electron/cloud-account.mjs";
 import type { CloudUsage, CloudUsageMeter } from "../../electron/cloud-home.mjs";
@@ -13,7 +13,7 @@ import { t } from "@/lib/i18n";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import {
   includedUsePercent, meterAmounts, meterBand, meterLabel, meterPercent, nextPlan, readUsageCardDismissed, rememberUsageCardDismissed, resetLine,
-  upgradeConfirmBody, upgradeLabel, upgradePath, usageCardView, type MeterBand,
+  upgradeConfirmBody, upgradePath, usageCardView, type MeterBand,
 } from "@/lib/usage-meter";
 import type { LocaleKey } from "@/locales";
 import { useStore } from "@/state/store";
@@ -150,7 +150,6 @@ export type UpgradeUi = { busy: "preview" | "change" | null; note: UpgradeNote |
 export function CloudUsageCardView({ usage, meters, band, upgrade, onHide, onSeeAll, children }: {
   usage: CloudUsage; meters: CloudUsageMeter[]; band: "near" | "full"; upgrade: UpgradeUi; onHide: () => void; onSeeAll: () => void; children?: ReactNode;
 }) {
-  const path = upgradePath(usage), target = nextPlan(usage);
   return (
     <section aria-labelledby="cloud-usage-card-title" data-cloud-usage-card={band}
       className="mb-2 rounded-xl border border-hairline/50 bg-card p-3 text-ink shadow-sm">
@@ -160,13 +159,6 @@ export function CloudUsageCardView({ usage, meters, band, upgrade, onHide, onSee
       </div>
       {meters.map((meter) => <MeterRow key={meter.kind} meter={meter} compact />)}
       <p className="mt-2 text-[12px] text-ink-secondary">{resetLine(usage)}</p>
-      {path !== "top" && (
-        <button type="button" className="ui-button ui-button-primary mt-2.5 w-full justify-center gap-1.5" disabled={upgrade.busy !== null} onClick={() => upgrade.onUpgrade()}>
-          {upgrade.busy === "preview" && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
-          {target ? t("usageMeter.upgradeToShort", { plan: cloudPlanLabel(target.tier) }) : t("usageMeter.upgrade")}
-          {path === "browser" && <ArrowUpRight size={13} aria-hidden="true" />}
-        </button>
-      )}
       <button type="button" className="mt-1.5 w-full py-1 text-center text-[12px] text-ink-secondary hover:text-ink" onClick={onSeeAll}>{t("usageMeter.card.seeAll")}</button>
       {upgrade.note && <div className="mt-1"><NoteLine note={upgrade.note} /></div>}
       {children}
@@ -200,24 +192,13 @@ function TopPlanNote({ usage }: { usage: CloudUsage }) {
   return <p className="text-[13px] text-ink-secondary">{t(TEAM_TIERS.includes(usage.tier) ? "usageMeter.teamPlan" : "usageMeter.topPlan")}</p>;
 }
 
-function OtherPlans({ usage, upgrade }: { usage: CloudUsage; upgrade: UpgradeUi }) {
-  if (upgradePath(usage) !== "app") return null;
-  return <>{[...usage.upgrades].sort((a, b) => a.amount - b.amount).slice(1).map((other) => (
-    <button key={other.tier} type="button" disabled={upgrade.busy !== null} onClick={() => upgrade.onUpgrade(other.tier)}
-      className="cursor-pointer text-[13px] text-ink-secondary underline underline-offset-2 hover:text-ink disabled:opacity-50">{upgradeLabel(other)}</button>
-  ))}</>;
-}
-
 export function CloudUsageSettingsView({ usage, upgrade, children }: { usage: CloudUsage; upgrade: UpgradeUi; children?: ReactNode }) {
   return (
     <Card title={t("usageMeter.title")} subtitle={t("usageMeter.subtitle", { plan: cloudPlanLabel(usage.tier) })}>
       <div data-cloud-usage={usage.tier}>
         <MeterList usage={usage} />
         <p className="mt-2 text-[12px] text-ink-secondary">{resetLine(usage)}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          {upgradePath(usage) === "top" ? <TopPlanNote usage={usage} /> : <UpgradeButton usage={usage} upgrade={upgrade} />}
-          <OtherPlans usage={usage} upgrade={upgrade} />
-        </div>
+        {upgradePath(usage) === "top" && <div className="mt-4"><TopPlanNote usage={usage} /></div>}
         {upgrade.note && <div className="mt-2"><NoteLine note={upgrade.note} /></div>}
       </div>
       {children}
@@ -236,18 +217,6 @@ export function CloudUsageSettings() {
   const { usage, upgrade, dialog } = useCloudUsageSettings();
   if (!usage) return null;
   return <CloudUsageSettingsView usage={usage} upgrade={upgrade}>{dialog}</CloudUsageSettingsView>;
-}
-
-export function UpgradeButton({ usage, upgrade, className }: { usage: CloudUsage; upgrade: UpgradeUi; className?: string }) {
-  const path = upgradePath(usage), target = nextPlan(usage);
-  if (path === "top") return null;
-  return (
-    <button type="button" className={cn("ui-button ui-button-primary gap-1.5", className)} disabled={upgrade.busy !== null} onClick={() => upgrade.onUpgrade()}>
-      {upgrade.busy === "preview" && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
-      {target ? upgradeLabel(target) : t("usageMeter.upgrade")}
-      {path === "browser" && <ArrowUpRight size={13} aria-hidden="true" />}
-    </button>
-  );
 }
 
 const SUMMARY_BAR: Record<MeterBand, string> = { ok: "bg-ink/80", near: "bg-warning", full: "bg-danger" };
@@ -281,21 +250,19 @@ export function CloudUsageSummaryView({ usage, upgrade, children }: { usage: Clo
   const percent = includedUsePercent(usage);
   return (
     <UsageSummaryCard kind="cloud" title={t("settings.simple.billing.included")} percent={percent} label={t("settings.simple.billing.summary", { percent: String(percent) })} note={resetLine(usage)}>
-      <UpgradeButton usage={usage} upgrade={upgrade} className="mt-3.5" />
       {upgrade.note && <div className="mt-2"><NoteLine note={upgrade.note} /></div>}
       {children}
     </UsageSummaryCard>
   );
 }
 
-export function CloudUsageDetails({ usage, upgrade }: { usage: CloudUsage; upgrade: UpgradeUi }) {
+export function CloudUsageDetails({ usage }: { usage: CloudUsage; upgrade: UpgradeUi }) {
   return (
     <Card title={t("usageMeter.title")} subtitle={t("usageMeter.subtitle", { plan: cloudPlanLabel(usage.tier) })}>
       <div data-cloud-usage={usage.tier}>
         <MeterList usage={usage} />
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 empty:hidden">
           {upgradePath(usage) === "top" && <TopPlanNote usage={usage} />}
-          <OtherPlans usage={usage} upgrade={upgrade} />
         </div>
       </div>
     </Card>

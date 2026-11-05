@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 
 import { t } from "@/lib/i18n";
+import { DEFAULT_BOT_NAME } from "@/lib/default-bot";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import type { LocaleKey } from "@/locales";
 import { useStore, type Message } from "@/state/store";
@@ -31,7 +32,7 @@ export function HelperIntro(props: IntroProps) {
 function AdvancedHelperIntro({ botId, threadId, message, answered }: IntroProps) {
   const { state, dispatch } = useStore();
   const bot = state.bots.find((candidate) => candidate.id === botId);
-  const name = bot?.name ?? "MausBot";
+  const name = bot?.name ?? DEFAULT_BOT_NAME;
   const team = bot?.defaultBot?.person ? state.config?.team?.name : undefined;
   const ask = (key: LocaleKey) => dispatch({ type: "answerCard", botId, threadId, messageId: message.id, answer: t(key) });
   return (

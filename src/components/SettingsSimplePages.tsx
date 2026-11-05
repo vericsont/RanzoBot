@@ -18,7 +18,7 @@ import { ActivitySection } from "./ActivitySection";
 import { BuiltInBrowserRow, ServerSitesRow } from "./BrowserSettingsRows";
 import { LoginsSettings } from "./LoginsSettings";
 import { OrganizationSettings } from "./OrganizationSettings";
-import { CloudPlanRow, CloudPlanFootnote, useCloudPlan } from "./ProIntroduction";
+import { CloudPlanRow } from "./ProIntroduction";
 import { CloudUsageDetails, CloudUsageSummaryView, useCloudUsageSettings } from "./CloudUsageMeter";
 import { SettingRow, SettingsDisclosureRow, SettingsGroup, SettingsRows } from "./SettingsPrimitives";
 import { UsageSection } from "./UsageSection";
@@ -40,7 +40,7 @@ export type SimpleDisclosureId = "ai-more" | "ai-keys" | "computer-elsewhere" | 
 export type Disclose = (id: SimpleDisclosureId) => { id: SimpleDisclosureId; open: boolean; onToggle: () => void };
 
 export const SIMPLE_ADVANCED_ONLY: readonly LocaleKey[] = [
-  "settings.newBotEffort.title", "newBot.defaults", "settings.roomTurns.title", "settings.mcpCalls.title", "settings.threads.title",
+  "settings.newBotEffort.title", "newBot.defaults", "settings.roomTurns.title", "settings.goalRuns.title", "settings.mcpCalls.title", "settings.threads.title",
   "settings.recovery.title", "settings.threadCleanup.title", "settings.font.title", "settings.chatWidth.title",
   "settings.pinnedCircles.title", "settings.universalPins.title", "settings.toolCalls.title", "settings.runCard.title", "settings.keepWarm.title",
 ];
@@ -157,8 +157,6 @@ export function SimpleComputerPage({ has, remoteAccess, servers, disclose }: { h
 
 export function SimpleBillingPage({ has, disclose, cloudAccount }: { has: Has; disclose: Disclose; cloudAccount: ReactNode }) {
   const { usage, upgrade, dialog } = useCloudUsageSettings();
-  const plan = useCloudPlan();
-  const signedOut = plan?.view.kind === "signed-out" || plan?.view.kind === "removed";
   return (
     <>
       <div data-settings-block="usage" className="scroll-mt-4">
@@ -171,9 +169,9 @@ export function SimpleBillingPage({ has, disclose, cloudAccount }: { has: Has; d
         </SettingsDisclosureRow>
       )}
       {has("cloudAccount") && (
-        <SettingsGroup label={t("settings.simple.billing.plan")} block="cloudAccount" footnote={<CloudPlanFootnote />}>
+        <SettingsGroup label={t("settings.simple.billing.plan")} block="cloudAccount">
           <SettingsRows><CloudPlanRow place="plan" usage={usage} upgrade={upgrade} /></SettingsRows>
-          {signedOut ? null : <div className="flex flex-col gap-4">{cloudAccount}</div>}
+          <div className="flex flex-col gap-4">{cloudAccount}</div>
         </SettingsGroup>
       )}
     </>

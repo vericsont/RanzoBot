@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from "react";
 import { Crown } from "lucide-react";
-import { BotAvatar, MausAvatar } from "@/components/Avatar";
+import { BotAvatar } from "@/components/Avatar";
 import { usePrefersReducedMotion } from "@/components/mascot-clock";
 import { cn } from "@/lib/cn";
 import { chiefChoices, chiefFor, createChiefPatch, DEFAULT_BOT_NAME, myDefaultBot, setWelcomingBot, stageIntro, useViewerEmail } from "@/lib/default-bot";
@@ -173,7 +173,7 @@ export function ChiefIntro({ replay, onDone, onLeave }: { replay: boolean; onDon
         <>
           <div className="flex flex-col items-center gap-4 px-6 pb-4 pt-6 text-center">
             <span ref={avatar} className="relative flex">
-              {maus ? <BotAvatar bot={maus} size={AVATAR_SIZE} motion="arrive" /> : <MausAvatar color="chrome" size={AVATAR_SIZE} label={DEFAULT_BOT_NAME} />}
+              {maus ? <BotAvatar bot={maus} size={AVATAR_SIZE} motion="arrive" /> : <img src="/app-icon.svg" alt={DEFAULT_BOT_NAME} width={AVATAR_SIZE} height={AVATAR_SIZE} />}
               <ChiefBadge />
             </span>
             <div className="flex flex-col gap-2">

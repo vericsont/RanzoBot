@@ -1,40 +1,34 @@
 import { useEffect, useState } from "react";
 import { Rocket, Star } from "lucide-react";
 import type { CloudAccountState } from "../../electron/cloud-account.mjs";
-import type { CloudOffer } from "../../electron/cloud-home.mjs";
 import { api, useStore } from "@/state/store";
 import { APP_REPOSITORY } from "@/lib/app-links";
 import { track } from "@/lib/analytics";
-import { boatOfferRuns } from "@/lib/boat-offer";
 import { brandStatus } from "@/lib/brand";
-import { buyOfferAllowed, cloudNoticeKind, cloudPlanView, cloudTrialNotice, cloudTrialView, offerTrialDays } from "@/lib/cloud-plan";
+import { cloudNoticeKind, cloudPlanView, cloudTrialNotice, cloudTrialView } from "@/lib/cloud-plan";
 import { jobRoutine, useCloudIntent } from "@/lib/cloud-intent";
 import { CLOUD_INTENT_GIVEN, cloudSetupStage } from "@/lib/cloud-setup";
 import { cornerPopupWaits, firstChatQuiet, firstReplyPending } from "@/lib/corner-popup";
-import { BOAT_OFFER_NOTICE, CLOUD_INTRO, CLOUD_NOTICE, CLOUD_TRIAL_NOTICE, dismissNotice, GROK_MOVE_NOTICE, introShown, introStage, launchNotice, markLaunchNotice, nextNotice, noticeSeen, PRODUCT_HUNT_NOTICE, PRODUCT_HUNT_UNTIL, PRODUCT_HUNT_URL, SIMPLE_MODE_NOTICE, STAR_NOTICE, TWO_PLACES_NOTICE, UPDATES_CONSENT_NOTICE, usedBefore, WHATS_NEW_NOTICE } from "@/lib/notices";
+import { BOAT_OFFER_NOTICE, CLOUD_INTRO, CLOUD_NOTICE, CLOUD_TRIAL_NOTICE, dismissNotice, GROK_MOVE_NOTICE, launchNotice, markLaunchNotice, nextNotice, noticeSeen, PRODUCT_HUNT_NOTICE, PRODUCT_HUNT_UNTIL, PRODUCT_HUNT_URL, SIMPLE_MODE_NOTICE, STAR_NOTICE, TWO_PLACES_NOTICE, UPDATES_CONSENT_NOTICE, usedBefore, WHATS_NEW_NOTICE } from "@/lib/notices";
 import { useTwoPlaces } from "@/lib/two-places";
 import { useSimpleModePromptSeen } from "@/lib/simple-mode-prompt";
-import { reportWhatsNew, WHATS_NEW_SOURCES, whatsNewAudience, whatsNewView, type WhatsNewAction, type WhatsNewSlide } from "@/lib/whats-new";
-import { cloudSignInDue, onboardingCloudOffered, welcomeFinishedThisLaunch, type WelcomeViewer } from "@/lib/onboarding";
+import { cloudSignInDue, welcomeFinishedThisLaunch, type WelcomeViewer } from "@/lib/onboarding";
 import { launchDialogShown, markLaunchDialog } from "@/lib/launch-dialogs";
 import { useUpdaterState } from "@/lib/updater";
 import { t } from "@/lib/i18n";
-import { BoatOfferCard, reportBoatOffer, type BoatOfferAction } from "./BoatOffer";
 import { engineReady } from "./EngineLibrary";
 import { CLOUD_NOTICE_CARD, cloudNoticeStep, CloudNoticeCard } from "./CloudNotice";
-import { CloudTrialIntroCard } from "./CloudTrialIntro";
 import { useMoveQuiet } from "./CloudSendStrip";
 import { CloudTrialNoticeCard, useCloudPlanSnapshot } from "./CloudTrialNotice";
 import { GrokMovePopup, reportGrokMovePopup, type GrokMovePopupAction } from "./GrokMovePopup";
 import { GrokMoveDialog } from "./lazy-screens";
-import { LinkButton, NoticeCard, NoticeToast, NotNowButton } from "./NoticeCard";
+import { LinkButton, NoticeCard, NotNowButton } from "./NoticeCard";
 import { useDesktopNotices, useOtherDialogOpen } from "./notice-dialogs";
 import { localDesktopPage } from "./onboarding/WelcomeGate";
 import { UpdatesConsentDialog, updatesConsentBridge, useUpdatesConsent } from "./UpdatesConsent";
 import { useMausBotWelcomeDue } from "./MausBotWelcome";
 import { reportSimpleModePrompt, SimpleModePrompt } from "./SimpleModePrompt";
 import { TwoPlacesCard } from "./TwoPlacesCard";
-import { WhatsNewPopup } from "./whats-new/WhatsNewPopup";
 
 function StarCard({ onDismiss }: { onDismiss: () => void }) {
   return <NoticeCard titleId="github-star-title" notice="github-star" icon={Star} title={t("star.title")} onDismiss={onDismiss}>
@@ -56,7 +50,6 @@ function ProductHuntCard({ onDone }: { onDone: (action: "upvote" | "not_now" | "
   </NoticeCard>;
 }
 
-const trialKey = (trial: { state: string; endsAt: number }) => `${trial.state}:${trial.endsAt}`;
 /** A first run lands in its Chief's chat, whose first messages arrive one at a time; the Grok Bot popup follows them. */
 const FIRST_MESSAGES_MS = 6_000;
 
@@ -67,21 +60,15 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   const bridge = !remote && local ? window.ogb?.cloudAccount : undefined;
   const desktop = remote ? undefined : window.ogb?.desktopNotices;
   const desktopState = useDesktopNotices(desktop);
-  // Asked once main has restored the Cloud sign-in, which it waits for before answering desktopState.
   const planBridge = !remote && (bridge || (viewer?.cloudHome && (desktopState || !desktop))) ? window.ogb?.cloudPlan : undefined;
-  const [account, setAccount] = useState<CloudAccountState | null>(null);
   const plan = useCloudPlanSnapshot(planBridge);
-  const [offer, setOffer] = useState<CloudOffer | null | undefined>(undefined);
-  const [offerFor, setOfferFor] = useState<string | null>(null);
+  const [trialOpen, setTrialOpen] = useState<string | null>(null);
+  const [account, setAccount] = useState<CloudAccountState | null>(null);
   const [organization, setOrganization] = useState<boolean | null>(window.ogb?.organization ? null : false);
   const [closed, setClosed] = useState(false);
-  const [introOpen, setIntroOpen] = useState(false);
-  const [trialOpen, setTrialOpen] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [simpleShown, setSimpleShown] = useState(false);
-  const [boatShown, setBoatShown] = useState(false);
   const [grokShown, setGrokShown] = useState(false);
   const [grokOpen, setGrokOpen] = useState(false);
   const [grokLanded, setGrokLanded] = useState(false);
@@ -113,60 +100,23 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   }, []);
   const view = bridge ? cloudPlanView(account) : null;
   const record = state.config?.onboarding;
-  const introAllowed = Boolean(bridge) && brandStatus().source !== "file" && organization !== true && !onboardingCloudOffered(record);
-  const stage = introStage(record, now());
-  const trialDue = cloudTrialNotice(plan);
-  // What's new: This computer's page of a desktop that sells MausBot Cloud, once per person; never on a branded build or a
-  // desktop an organization runs.
-  const whatsNewHere = Boolean(bridge && desktop) && brandStatus().source !== "file";
-  const whatsNewSeen = noticeSeen(record, WHATS_NEW_NOTICE);
-  const whatsNewDue = !whatsNewHere || whatsNewSeen || organization === true ? false : !desktopState || organization === null ? null
-    : desktopState.cloud && !desktopState.seen.includes(WHATS_NEW_NOTICE);
-  const whatsNewFor = whatsNewDue === false ? null : whatsNewAudience(account);
-  const wantOffer = Boolean(bridge?.offer) && ((introAllowed && view !== null && buyOfferAllowed(view) && stage !== "done")
-    || whatsNewFor === "none" || whatsNewFor === "own");
-  const offerKey = wantOffer ? `${view?.kind}:${JSON.stringify(account?.offer ?? null)}` : null;
-  useEffect(() => {
-    if (!offerKey || !bridge?.offer) return;
-    let active = true;
-    const answer = (next: CloudOffer | null) => { if (active) { setOffer(next); setOfferFor(offerKey); } };
-    void bridge.offer().then(answer, () => answer(null));
-    return () => { active = false; };
-  }, [offerKey, bridge]);
-  useEffect(() => {
-    if (whatsNewSeen && desktopState && !desktopState.seen.includes(WHATS_NEW_NOTICE)) void desktop?.seen(WHATS_NEW_NOTICE).catch(() => {});
-  }, [whatsNewSeen, desktopState]);
-  const whatsNewState = whatsNewDue === false ? "none" : whatsNewView(account, !bridge?.offer ? null : offerFor === offerKey ? offer : undefined);
-  const whatsNew = typeof whatsNewState === "object" ? whatsNewState : null;
-  const whatsNewBlocked = useOtherDialogOpen(whatsNewDue !== false) || Boolean(state.liveCall && state.liveCall.status !== "ended");
   const consentDue = consent.state?.available === true && consent.state.due && !consentDone;
   const consentBlocked = useOtherDialogOpen(consentDue) || Boolean(state.liveCall && state.liveCall.status !== "ended");
   const consentFact = !consentHere || consentDone ? false : consent.state === undefined ? null : consentDue ? (consentBlocked ? null : true) : false;
   // Every page with the app's chrome, desktop or Cloud, new install or not: once per browser, as the mode is.
   const simpleDue = !useSimpleModePromptSeen();
   const simpleBlocked = useOtherDialogOpen(simpleDue) || Boolean(state.liveCall && state.liveCall.status !== "ended");
-  const boatHere = boatOfferRuns(now()) && brandStatus().source !== "file";
 
   const trial = plan?.trial;
-  const key = trial ? trialKey(trial) : null;
+  const trialKey = trial ? `${trial.state}:${trial.endsAt}` : null;
+  const trialDue = cloudTrialNotice(plan);
   const setupRecord = record && (intent.pending || intent.sent) ? { ...record, hintsSeen: [...record.hintsSeen, CLOUD_INTENT_GIVEN] } : record;
   const setupHere = cloudSignInDue(viewer, state, engineReady)
     || ["waiting", "shown"].includes(cloudSetupStage({ viewer, connected: state.connected, enginesKnown: state.instances.length > 0,
       engineReady: state.instances.some(engineReady), onboarding: setupRecord, planned: Boolean(jobRoutine(state.routines, intent.sent)) }));
-  const waits = cornerPopupWaits(state, updater, { quiet, idle: true, viewer, duringFirstChat: true }) || Boolean(state.cloudAdd) || state.cloudHowTo || setupHere;
+  const waits = cornerPopupWaits(state, updater, { quiet, idle: true, viewer, duringFirstChat: true }) || setupHere;
   const kind = view ? cloudNoticeKind(view, account) : null;
-  const introDue = (): boolean | null => {
-    if (!introAllowed || !view) return false;
-    if (view.kind === "unknown" || view.kind === "connecting" || organization === null) return null;
-    if (!buyOfferAllowed(view) || !usedBefore(state.bots)) return false;
-    if (offer === undefined) return null;
-    if (offerTrialDays(offer) === null) return false;
-    return introOpen || stage === "due" ? true : null;
-  };
   const cards = Boolean(bridge || planBridge);
-  // Promotions never land on a new install's first chat: they wait for its first reply, and the full-screen What's new popup
-  // also for a launch after the one whose welcome just finished. Account and billing notices keep their own rules.
-  // Unknown (null) until the bots have loaded, so nothing lower in the queue flashes up before them.
   const firstChat = firstReplyPending(state);
   // MausBot's first-launch card goes first: the popup and the question wait while it is due. The popup skips a launch the
   // card used; the question may follow the card once it closes, as it follows the popup.
@@ -191,46 +141,34 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   // After a closed popup only the product-updates question may follow in this launch; nothing else does.
   const notice = waits ? null : closed ? (consentNow === true ? UPDATES_CONSENT_NOTICE : null)
     : firstChatQuiet(state) ? (grokNow === true && (launch === null || launch === GROK_MOVE_NOTICE) ? GROK_MOVE_NOTICE : null)
-    : cards || whatsNewHere || consentHere || simpleDue || boatHere || twoFact !== false || grokNow !== false ? nextNotice({
+    : cards || consentHere || simpleDue || twoFact !== false || grokNow !== false ? nextNotice({
     [GROK_MOVE_NOTICE]: grokNow,
-    // As the What's new popup: never in the launch whose welcome just finished, nor over MausBot's first-launch card.
+    [WHATS_NEW_NOTICE]: false,
+    [CLOUD_INTRO]: false,
+    [CLOUD_TRIAL_NOTICE]: planBridge && plan === null ? null : Boolean(trialKey && (trialDue || trialOpen === trialKey)),
+    [BOAT_OFFER_NOTICE]: false,
     [SIMPLE_MODE_NOTICE]: !simpleDue || afterWelcome === true ? false : afterWelcome === null || mausBotFirst || simpleBlocked ? null : true,
-    [WHATS_NEW_NOTICE]: whatsNewDue === false || whatsNewState === "none" || moving || afterWelcome === true ? false
-      : whatsNewDue === null || whatsNewState === "loading" || !viewer || afterWelcome === null || mausBotFirst || moving === null || whatsNewBlocked ? null : true,
     [UPDATES_CONSENT_NOTICE]: consentNow,
     [TWO_PLACES_NOTICE]: twoFact,
     [PRODUCT_HUNT_NOTICE]: !cards || moving || firstChat === true || brandStatus().source === "file" || now() >= PRODUCT_HUNT_UNTIL ? false
       : organization === null || moving === null || firstChat === null ? null : !organization,
-    [CLOUD_INTRO]: moving ? false : moving === null ? null : introDue(),
-    [CLOUD_TRIAL_NOTICE]: planBridge && plan === null ? null : Boolean(key && (trialDue || trialOpen === key)),
     [CLOUD_NOTICE]: !view ? false : view.kind === "unknown" ? null
       : Boolean(kind && !noticeSeen(record, CLOUD_NOTICE_CARD[kind].dismissed)),
-    [BOAT_OFFER_NOTICE]: !boatHere || moving || afterWelcome === true || !usedBefore(state.bots) || desktopState?.seen.includes(BOAT_OFFER_NOTICE) ? false
-      : organization === null || moving === null || afterWelcome === null || mausBotFirst || (desktop && !desktopState) ? null : !organization,
     [STAR_NOTICE]: !bridge || moving || brandStatus().source === "file" || !usedBefore(state.bots) ? false : moving === null ? null : true,
-  }, id => id === CLOUD_INTRO ? stage === "done" && !introOpen
-    : id === STAR_NOTICE || id === PRODUCT_HUNT_NOTICE || id === BOAT_OFFER_NOTICE ? noticeSeen(record, id) : false, launch) : null;
+  }, id => id === STAR_NOTICE || id === PRODUCT_HUNT_NOTICE ? noticeSeen(record, id) : false, launch) : null;
 
-  const shownKey = notice === CLOUD_TRIAL_NOTICE ? key : notice;
+  const shownKey = notice === CLOUD_TRIAL_NOTICE ? trialKey : notice;
   useEffect(() => {
     if (!shownKey || !notice) return;
     markLaunchNotice(notice);
     // The popups and the question own this launch: MausBot's first-launch card waits for a later one.
-    if (shownKey === GROK_MOVE_NOTICE || shownKey === SIMPLE_MODE_NOTICE || shownKey === WHATS_NEW_NOTICE || shownKey === UPDATES_CONSENT_NOTICE) markLaunchDialog("notices");
-    if (shownKey === CLOUD_INTRO) {
-      setIntroOpen(true);
-      track("cloud_card_shown", { variant: view?.kind === "signed-out" ? "signed_out" : "free" });
-      const patch = introShown(record, now());
-      if (patch) void api("/api/config", { method: "PUT", body: JSON.stringify(patch) }).then(config => dispatch({ type: "configStatus", config })).catch(() => {});
-    } else if (notice === CLOUD_TRIAL_NOTICE && trialOpen !== shownKey) {
+    if (shownKey === GROK_MOVE_NOTICE || shownKey === SIMPLE_MODE_NOTICE || shownKey === UPDATES_CONSENT_NOTICE) markLaunchDialog("notices");
+    if (notice === CLOUD_TRIAL_NOTICE && trialOpen !== shownKey) {
       setTrialOpen(shownKey);
       void planBridge?.noticeSeen?.().catch(() => {});
     } else if (shownKey === SIMPLE_MODE_NOTICE && !simpleShown) {
       setSimpleShown(true);
       reportSimpleModePrompt("shown");
-    } else if (shownKey === BOAT_OFFER_NOTICE && !boatShown) {
-      setBoatShown(true);
-      reportBoatOffer("shown", "card");
     } else if (shownKey === GROK_MOVE_NOTICE && !grokShown) {
       setGrokShown(true);
       reportGrokMovePopup("shown");
@@ -244,7 +182,6 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   };
   const close = () => { setClosed(true); setTrialOpen(null); setFailed(false); };
   if (grokOpen) return <GrokMoveDialog onClose={() => setGrokOpen(false)} />;
-  if (toast) return <NoticeToast text={toast} onDone={() => setToast(null)} />;
   if (!notice) return null;
 
   if (notice === GROK_MOVE_NOTICE) {
@@ -258,29 +195,17 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
 
   if (notice === SIMPLE_MODE_NOTICE) return <SimpleModePrompt onClose={close} />;
 
-  if (notice === WHATS_NEW_NOTICE && whatsNew && desktop) {
-    const report = (action: WhatsNewAction, slide: WhatsNewSlide) => reportWhatsNew(action, slide, whatsNew);
-    const done = () => { close(); save(WHATS_NEW_NOTICE); void desktop.seen(WHATS_NEW_NOTICE).catch(() => {}); };
-    return <WhatsNewPopup view={whatsNew} report={report} onDone={done} onBuy={slide => dispatch({ type: "openCloudAdd", source: WHATS_NEW_SOURCES[slide] })} />;
-  }
-
   if (notice === UPDATES_CONSENT_NOTICE && consent.state) {
     const done = () => { setConsentDone(true); close(); };
     return <UpdatesConsentDialog signedIn={consent.state.signedIn}
       onYes={async email => { await consent.choose("opted_in", email); done(); }}
       onNo={() => { done(); void consent.choose("declined").catch(() => {}); }} />;
   }
-  if (notice === CLOUD_INTRO && offer) {
-    const done = (action: string) => { track("cloud_card_action", { action }); close(); save(CLOUD_INTRO); };
-    return <CloudTrialIntroCard offer={offer}
-      onStart={() => { done("start"); dispatch({ type: "openCloudAdd", source: "app_card" }); }}
-      onHowTo={() => { done("howto"); dispatch({ type: "cloudHowTo", open: true }); }}
-      onSignIn={view?.kind === "signed-out" ? () => { track("cloud_card_action", { action: "signin" }); close(); dispatch({ type: "openCloudAdd", source: "app_card", signIn: true }); } : undefined}
-      onNotNow={() => { done("not_now"); setToast(t("cloudIntro.later")); }}
-      onDismiss={() => { done("close"); setToast(t("cloudIntro.later")); }} />;
-  }
   if (notice === CLOUD_TRIAL_NOTICE && trial) {
-    const shown = cloudTrialView(trial, plan?.credit);
+    const shown = cloudTrialView({ ...trial, amount: null });
+    shown.credit = undefined;
+    shown.switchPlan = undefined;
+    if (shown.action?.kind === "subscribe") shown.action = null;
     const act = () => { setFailed(false); void planBridge?.manage().then(close, () => setFailed(true)); };
     return <CloudTrialNoticeCard view={shown} failed={failed} onAction={act} onClose={close} />;
   }
@@ -300,13 +225,6 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   }
   if (notice === PRODUCT_HUNT_NOTICE) {
     return <ProductHuntCard onDone={action => { track("product_hunt_card", { action }); close(); save(PRODUCT_HUNT_NOTICE); }} />;
-  }
-  if (notice === BOAT_OFFER_NOTICE) {
-    const done = (action: BoatOfferAction) => {
-      reportBoatOffer(action, "card"); close(); save(BOAT_OFFER_NOTICE);
-      void desktop?.seen(BOAT_OFFER_NOTICE).catch(() => {});
-    };
-    return <BoatOfferCard onDone={done} />;
   }
   if (notice === STAR_NOTICE) return <StarCard onDismiss={() => { close(); save(STAR_NOTICE); }} />;
   return null;

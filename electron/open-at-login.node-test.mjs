@@ -121,6 +121,21 @@ test("Linux: the person's autostart entry has no hidden flag and no lending mark
   assert.equal(existsSync(entry), false);
 });
 
+test("Linux: RanzoBot and OpenMausBot keep separate autostart entries", async t => {
+  const dir = await temp(t);
+  const env = { XDG_CONFIG_HOME: path.join(dir, "config") };
+  const upstream = createOpenAtLogin({ app: fakeApp(), file: path.join(dir, "upstream.json"), platform: "linux", home: dir, env, execPath: "/opt/OpenMausBot/openmausbot" });
+  const ranzo = createOpenAtLogin({ app: fakeApp(), file: path.join(dir, "ranzo.json"), platform: "linux", home: dir, env, execPath: "/opt/RanzoBot/ranzobot", ranzoBot: true });
+  upstream.choose(true);
+  ranzo.choose(true);
+  const upstreamFile = path.join(env.XDG_CONFIG_HOME, "autostart", "openmausbot.desktop");
+  const ranzoFile = path.join(env.XDG_CONFIG_HOME, "autostart", "ranzobot.desktop");
+  assert.match(await readFile(ranzoFile, "utf8"), /Name=RanzoBot/);
+  ranzo.choose(false);
+  assert.equal(existsSync(ranzoFile), false);
+  assert.equal(existsSync(upstreamFile), true);
+});
+
 test("a build that cannot add a login item offers no switch and changes nothing", async t => {
   const dir = await temp(t);
   const app = fakeApp({ isPackaged: false });

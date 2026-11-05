@@ -336,6 +336,7 @@ interface PiEvent {
   type: string;
   command?: string;
   success?: boolean;
+  error?: string;
   data?: unknown;
   assistantMessageEvent?: { type?: string; delta?: string };
   toolCallId?: string;
@@ -629,7 +630,9 @@ export const PiDriver: ProviderDriver<PiConfig> = {
               responseWaiters.delete(key);
               clearTimeout(waiter.timer);
               if (evt.success) waiter.resolve(evt.data);
-              else waiter.reject(new PiRpcRefusalError(`pi ${evt.command} failed`));
+              else waiter.reject(new PiRpcRefusalError(
+                evt.error?.trim() ? `pi ${evt.command} failed: ${evt.error}` : `pi ${evt.command} failed`,
+              ));
             }
             return;
           }

@@ -149,6 +149,7 @@ import {
   localVmMode,
   localVmPreservesInstalledApps,
   roomTurnTimeoutMinutes,
+  groupGoalMaxTurns,
   mcpCallTimeoutMinutes,
   cacheKeepWarmSettings,
   threadEventLogMaxBytes,
@@ -3601,7 +3602,7 @@ function activeGroupSpeaker(groupId: string): { botId: string; name: string; col
 }
 
 const goalTurns = createGoalTurns({ retireProviderTurn });
-const goalCards = createGoalCards({ store, routines: () => routines, notify, routineSourceOwner, routineSourceThread });
+const goalCards = createGoalCards({ store, maxTurns: () => groupGoalMaxTurns(cfg), routines: () => routines, notify, routineSourceOwner, routineSourceThread });
 const oneOnOneGoals = createOneOnOneGoals({
   store, cards: goalCards, turns: goalTurns, canStart: canAdmitDirectTurn, startTurn, isUnattended,
 });
@@ -11895,6 +11896,7 @@ function configStatus() {
     ...(CLOUD_HOME ? { cloudHome: true } : {}), ...(CLOUD_TEAM ? { team: { id: CLOUD_TEAM.id, name: CLOUD_TEAM.name, ...(CLOUD_HOME ? { cloudPage: `${CLOUD_HOME.adminOrigin}/cloud` } : {}) } } : {}),
     language: appLanguage() ?? "", computerName: cfg.computerName ?? "",
     rooms: { turnTimeoutMinutes: roomTurnTimeoutMinutes(cfg) },
+    goalRuns: { maxTurns: groupGoalMaxTurns(cfg) },
     mcp: { callTimeoutMinutes: mcpCallTimeoutMinutes(cfg) },
     automaticRecovery: cfg.automaticRecovery ?? { enabled: false },
     cacheKeepWarm: cacheKeepWarmSettings(cfg),
