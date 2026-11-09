@@ -19,7 +19,7 @@ import { SIDEBAR_AND_PANEL_FIT, SIDEBAR_INLINE, TWO_SIDE_PANELS_FIT, useMediaQue
 import { preloadConnectedApps } from "@/lib/connected-apps";
 import {
   ActivityPanel, BotSettingsDialog, ComputerPanel, FilesView, InspectorPanel, KeyboardShortcutsModal, LocalVmWorkspace,
-  PluginsPanel, preloadScreens, RemoteAgentSettingsPanel, RemoteDesktopPanel, RoomPanel, SettingsModal, TeamMapPage, TriggersPage,
+  PluginsPanel, preloadScreens, RemoteAgentSettingsPanel, RemoteDesktopPanel, RoomPanel, SettingsModal, TeamMapPage, TerminalPage, TriggersPage,
 } from "@/components/lazy-screens";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import { useRoomPanelShown } from "@/lib/room-panel";
@@ -127,6 +127,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   useExternalChatLinks(state, dispatch);
   usePresence(state, dispatch);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [terminalDirty, setTerminalDirty] = useState(false);
   usePageLanguage(effectiveLanguage(useLanguageChoice(), state.config?.language));
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [localVmWorkspaceBotId, setLocalVmWorkspaceBotId] = useState<string | null>(null);
@@ -162,7 +163,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.isComposing || state.shortcutsOpen) return;
+      if (e.defaultPrevented || e.isComposing || state.shortcutsOpen || state.activeView === "terminal") return;
       if (shouldOpenKeyboardShortcuts(e)) {
         e.preventDefault();
         dispatch({ type: "toggleShortcuts", open: true });
@@ -341,7 +342,10 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
           menuButtonRef.current?.focus();
         }}
       />}
-      {state.activeView === "team-map" ? (
+      {!remoteClient && (state.activeView === "terminal" || terminalDirty) && <div className={state.activeView === "terminal" ? "flex min-h-0 min-w-0 flex-1" : "hidden"}>
+        <TerminalPage onDirtyChange={setTerminalDirty} />
+      </div>}
+      {state.activeView === "terminal" && !remoteClient ? null : state.activeView === "team-map" ? (
         <TeamMapPage />
       ) : state.activeView === "files" ? (
         <FilesView />

@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ -z "${RNZ_NODE:-}" ] || [ -z "${RNZ_CLI:-}" ]; then
+  printf '%s\n' 'rnz: RanzoBot terminal launcher is unavailable' >&2
+  exit 127
+fi
+export ELECTRON_RUN_AS_NODE=1
+exec "$RNZ_NODE" "$RNZ_CLI" "$@"

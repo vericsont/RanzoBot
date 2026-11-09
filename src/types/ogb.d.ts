@@ -379,6 +379,21 @@ const __APP_VERSION__: string;
         currentState(): Promise<{ open: boolean; contextId: string | null }>;
         onState(cb: (state: { open: boolean; contextId: string | null }) => void): () => void;
       };
+      /** Human-operated host shell, available only from the local app page. */
+      hostTerminal?: {
+        start(input: { cols: number; rows: number }): Promise<{ id: string }>;
+        attach(id: string): Promise<void>;
+        write(id: string, data: string): Promise<void>;
+        resize(id: string, cols: number, rows: number): Promise<void>;
+        close(id: string): Promise<void>;
+        restoreState(): Promise<unknown>;
+        saveState(state: unknown): Promise<unknown>;
+        setDirty(dirty: boolean): void;
+        /** Resolve after this chunk has been written to the terminal; output flow resumes after settlement. */
+        onData(cb: (id: string, data: string) => Promise<void>): () => void;
+        onExit(cb: (id: string, code: number) => void): () => void;
+        onOpen(cb: (request: { requestId: string; sessionId: string; resource: import("../components/terminal/FilePane").FileResource | { id: string; kind: "git"; label: string } }) => boolean | Promise<boolean>): () => void;
+      } & import("../components/terminal/FilePane").FileBridge & import("../components/terminal/GitPane").GitBridge;
       /** Two Local VM viewers embedded in one app window. URLs are accepted
        * only by main-process validation and never return over this bridge. */
       desktopWorkspace?: {

@@ -37,4 +37,6 @@ test("a Cloud or server page keeps the bridge keys it had, and the home page its
   const remote = new Set(listed("REMOTE_SAFE")), home = new Set([...remote, ...listed("HOME_PAGE")]);
   for (const key of contract.remoteSafe) assert.ok(remote.has(key), `${key} left REMOTE_SAFE. ${KEEP}`);
   for (const key of contract.homePage) assert.ok(home.has(key), `${key} left the home page's bridge. ${KEEP}`);
+  assert.equal(remote.has("hostTerminal"), false);
+  assert.equal(home.has("hostTerminal"), false);
 });

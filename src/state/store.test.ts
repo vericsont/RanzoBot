@@ -38,6 +38,7 @@ import {
 import { LAST_CONVERSATION_KEY } from "@/lib/last-conversation";
 import { cacheDesktopCapabilities, desktopCapabilitiesNow } from "@/lib/desktop";
 import { LAST_BOT_SECTION_KEY } from "@/lib/last-bot-section";
+import { registerTerminalDraftGuard } from "@/lib/terminal-draft-guard";
 import { transcriptLookups } from "@/lib/transcript-derivations";
 import { openLiveEvents, type LiveEventSourceLike, type LiveEventsPlatform } from "../lib/live-events";
 import type { ModelVariantState, RuntimeEvent } from "../../shared/runtime-events";
@@ -2558,6 +2559,18 @@ describe("activity panel", () => {
     expect(reducer(suggested, { type: "showTeamMap" })).toMatchObject({ activeView: "team-map", filesSuggest: null });
   });
 
+  it("opens the local terminal as its own page without changing conversation selection", () => {
+    const open = { ...initialState, selectedId: "bot-1", activityOpen: true, computerOpen: true, settingsOpen: true, appSettingsOpen: true };
+    expect(reducer(open, { type: "showTerminal" })).toMatchObject({
+      activeView: "terminal",
+      selectedId: "bot-1",
+      activityOpen: false,
+      computerOpen: false,
+      settingsOpen: false,
+      appSettingsOpen: false,
+    });
+  });
+
   it("a pinned web panel replaces the main view like the team map, and chat comes back", () => {
     const open = { ...initialState, activityOpen: true, computerOpen: true, settingsOpen: true };
     const panel = reducer(open, { type: "showWebPanel", id: "panel-1" });
@@ -2937,6 +2950,62 @@ describe("restoring the open conversation", () => {
       await settle();
       expect(seen.selectedId).toBe("bot-2");
       expect(stored.get(LAST_CONVERSATION_KEY)).toBe("bot-2");
+    });
+
+    it("cancels terminal-leaving actions before state changes and side effects", async () => {
+      const { stream } = await boot();
+      stream.send(hello());
+      await settle();
+
+      const request = vi.fn().mockResolvedValue(new Response("{}"));
+      vi.stubGlobal("fetch", request);
+      flushSync(() => dispatch({ type: "markUnread", botId: "bot-2" }));
+      await settle();
+      request.mockClear();
+      flushSync(() => dispatch({ type: "showTerminal" }));
+
+      const guard = vi.fn(() => false);
+      const unregister = registerTerminalDraftGuard(guard);
+      try {
+        const actions: Action[] = [
+          { type: "select", id: "bot-2" },
+          { type: "showChat" },
+          { type: "showFiles" },
+          { type: "showRoutines" },
+          { type: "showTeamMap" },
+          { type: "showWebPanel", id: "panel" },
+          { type: "openDataResult", botId: "bot-2", cardId: "card" },
+          { type: "openSignIn", botId: "bot-2", messageId: "message", url: "https://example.invalid", site: "example", place: "local" },
+          { type: "newTask", botId: "bot-2" },
+          { type: "switchTask", botId: "bot-2", threadId: "thread" },
+          { type: "newBot" },
+          { type: "duplicateBot", botId: "bot-2" },
+        ];
+        for (const action of actions) {
+          flushSync(() => dispatch(action));
+          expect(seen.activeView).toBe("terminal");
+          expect(seen.selectedId).toBe("bot-1");
+        }
+        expect(guard).toHaveBeenCalledTimes(actions.length);
+        expect(request).not.toHaveBeenCalled();
+
+        flushSync(() => dispatch({ type: "toggleSettings", open: true }));
+        flushSync(() => dispatch({ type: "botPatched", bot: { ...first, name: "Updated" } }));
+        expect(seen.activeView).toBe("terminal");
+        expect(seen.settingsOpen).toBe(true);
+        expect(seen.bots[0]?.name).toBe("Updated");
+        expect(guard).toHaveBeenCalledTimes(actions.length);
+      } finally {
+        unregister();
+      }
+
+      const allow = registerTerminalDraftGuard(() => true);
+      try {
+        flushSync(() => dispatch({ type: "showFiles" }));
+        expect(seen.activeView).toBe("files");
+      } finally {
+        allow();
+      }
     });
 
     it("a pressed Steer that stays queued for its pictures says why, and a plain queued answer stays quiet", async () => {

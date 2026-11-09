@@ -1,4 +1,4 @@
-import { FolderOpen, Globe, Puzzle, UsersRound, Zap } from "lucide-react";
+import { FolderOpen, Globe, Puzzle, SquareTerminal, UsersRound, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useAppTriggers } from "@/lib/app-triggers";
@@ -13,7 +13,13 @@ import { useStore } from "@/state/store";
 
 import { SidebarSectionHeader } from "./SidebarSectionHeader";
 import { UpdateIndicator } from "./UpdateIndicator";
+import type { HostTerminalBridge } from "./TerminalPage";
 
+function hasLocalHostTerminal(): boolean {
+  if (typeof window === "undefined") return false;
+  const desktop = window.ogb as (NonNullable<typeof window.ogb> & { hostTerminal?: HostTerminalBridge }) | undefined;
+  return desktop?.remoteClient?.active !== true && Boolean(desktop?.hostTerminal);
+}
 
 function NavRow({
   id,
@@ -61,6 +67,23 @@ function NavRow({
       )}
     </button>
   );
+}
+
+export function SidebarTerminalButton({ density, rail = false }: { density: SidebarDensity; rail?: boolean }) {
+  const { state, dispatch } = useStore();
+  if (!hasLocalHostTerminal()) return null;
+  const iconsOnly = density === "icons";
+  const iconSize = iconsOnly && !rail ? 20 : 18;
+  const label = t("sidebar.nav.terminal");
+  return <NavRow
+    id="terminal"
+    label={label}
+    iconsOnly={iconsOnly}
+    rail={rail}
+    active={state.activeView === "terminal"}
+    icon={(active) => <SquareTerminal size={iconSize} className={active ? "text-accent" : "text-ink-secondary"} />}
+    onClick={() => dispatch({ type: "showTerminal" })}
+  />;
 }
 
 export function SidebarAppsButton() {
@@ -121,6 +144,7 @@ export function SidebarFooterNav({
   const iconSize = iconsOnly && !rail ? 20 : 18;
   const tone = (active: boolean) => (active ? "text-accent" : "text-ink-secondary");
   const automationsNeedYou = useAutomationsNeedYou();
+  const terminalRow = <SidebarTerminalButton density={density} rail={rail} />;
   const automationsRow = <NavRow
     id="automations"
     label={t("sidebar.nav.automations")}
@@ -140,7 +164,11 @@ export function SidebarFooterNav({
     icon={(active) => <FolderOpen size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "showFiles" })}
   />;
-  if (!advanced && !iconsOnly) return null;
+  if (!advanced && !iconsOnly) {
+    return hasLocalHostTerminal()
+      ? <nav aria-label={t("sidebar.tools")} className="flex flex-col gap-0.5">{terminalRow}</nav>
+      : null;
+  }
   const appsRow = iconsOnly && <NavRow
     id="apps"
     label={t("sidebar.nav.apps")}
@@ -151,7 +179,7 @@ export function SidebarFooterNav({
     icon={(active) => <Puzzle size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "togglePlugins", open: true })}
   />;
-  if (rail) return <nav data-tour="tools" aria-label={t("sidebar.tools")} className="flex flex-col items-center gap-0.5">{appsRow}</nav>;
+  if (rail) return <nav data-tour="tools" aria-label={t("sidebar.tools")} className="flex flex-col items-center gap-0.5">{appsRow}{terminalRow}</nav>;
 
   const rows = (
     <>
@@ -168,6 +196,7 @@ export function SidebarFooterNav({
           onClick={() => dispatch({ type: "showTeamMap" })}
         />
       )}
+      {terminalRow}
       {filesRow}
       {advanced && webPanels.map((panel) => (
         <NavRow

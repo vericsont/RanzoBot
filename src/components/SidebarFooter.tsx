@@ -9,7 +9,7 @@ import { CloudRoomCard } from "./CloudRoomCard";
 import { CloudUsageCard } from "./CloudUsageMeter";
 import { endCloudHowTo, useWorkspacePlace, type WorkspacePlace } from "./DesktopWorkspaceSwitcher";
 import { SidebarConnectApps } from "./SidebarConnectApps";
-import { SidebarBottomButtons, SidebarFooterNav } from "./SidebarFooterNav";
+import { SidebarBottomButtons, SidebarFooterNav, SidebarTerminalButton } from "./SidebarFooterNav";
 import { phoneSettingsAction, SidebarPhoneButton } from "./SidebarPhoneButton";
 import { SidebarProfileMenu, useSimpleAccount, type ArchivedBots } from "./SidebarProfileMenu";
 import { UpdateIndicator } from "./UpdateIndicator";
@@ -35,6 +35,7 @@ function SimpleSidebarFooter({ owner, archived }: { owner: string | null; archiv
   const openAccount = () => footer.current?.querySelector("[data-sidebar-account]")?.closest("button")?.click();
   return (
     <div ref={footer} data-sidebar-footer="simple" className="px-4 pb-4 pt-2">
+      <SidebarTerminalButton density="comfortable" />
       <CloudRoomCard />
       <CloudUsageCard />
       <SidebarPlaceStatus place={place} className="mb-2 px-1" />

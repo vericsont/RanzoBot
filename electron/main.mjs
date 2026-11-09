@@ -45,6 +45,12 @@ let startupScreen = null;
 let desktopTray = null;
 import { collisionFreeDownloadPath, defaultSaveName, openLogsFolder, revealDownloadWhenDone, revealInFolder, withSavableFile } from "./save-file.mjs";
 import { desktopViewerPermissionAllowed } from "./desktop-viewer-permissions.mjs";
+import { createTerminalSessions, loadTerminalPty, registerTerminalIpc, releaseTerminalOwnerOnWindowClose, terminalPageAllowed, terminalSenderAllowed } from "./terminal-sessions.mjs";
+import { createTerminalStateStore } from "./terminal-state.mjs";
+import { createTerminalResources } from "./terminal-resources.mjs";
+import { createTerminalFiles } from "./terminal-files.mjs";
+import { createTerminalGit } from "./terminal-git.mjs";
+import { createRnzTransport } from "./rnz-transport.mjs";
 import { appPermissionHandlers, externalLinkUrl } from "./app-permissions.mjs";
 import { appFrameNavigationAllowed } from "./app-frame-guard.mjs";
 import { writeClipboardText } from "./clipboard-write.mjs";
@@ -142,6 +148,14 @@ let desktopViewerOwner = null;
 let desktopViewerContextId = null;
 let desktopWorkspaceManager = null;
 let desktopWorkspaceOwner = null;
+let terminalSessions = null;
+let terminalState = null;
+let terminalResources = null;
+let rnzTransport = null;
+let rnzReady = null;
+const terminalDocumentTokens = new WeakMap();
+const terminalDirtyOwners = new WeakSet();
+let terminalDiscardConfirmed = false;
 let pendingOrganizationEntry = takeOrganizationDeepLink(process.argv);
 function appWindows() {
   return BrowserWindow.getAllWindows().filter((win) => !isTalkPanel(win));
@@ -1436,6 +1450,79 @@ ipcMain.on("desktop:unread-count", (event, value) => {
 
 const { LOCAL_ID, activeEnvironment, activeRemote, allowedOrigins, bootEnvironmentDir, otherPlaces, parseHostedWorkspaceLink, savedPlace, startupEnvironmentDir, withActive, withEnvironment, withEnvironmentLook, withLocalEnvironment, withMicrophone, withPlaceColor, withoutEnvironment, withOwnCloud, withTeam, placesMenuOptions, workspaceMenuTemplate, workspaceNavigationAllowed, workspaceSenderAllowed, workspaceSummary, workspaceWindowTitle } = environmentsModule;
 let environmentsState = { environments: [], activeId: LOCAL_ID };
+function hostTerminalWorkspaceAllowed() {
+  const active = activeEnvironment(environmentsState);
+  return !desktopRemoteAccess && (!active || active.kind === "local");
+}
+function hostTerminalPageAllowed(win) {
+  if (!win || win.isDestroyed() || win !== mainWindow || !hostTerminalWorkspaceAllowed()) return false;
+  const event = { sender: win.webContents, senderFrame: win.webContents.mainFrame };
+  return senderIsLocal(event) && terminalPageAllowed(event, {
+    owner: win,
+    localOrigin: rendererOrigin(),
+    localWorkspace: true,
+  });
+}
+function issueHostTerminalDocumentToken(win) {
+  if (!hostTerminalPageAllowed(win)) return;
+  const token = randomUUID();
+  terminalDocumentTokens.set(win.webContents, token);
+  try { win.webContents.send("host-terminal:document-token", token); }
+  catch { terminalDocumentTokens.delete(win.webContents); }
+}
+function terminalStateStore() {
+  terminalState ??= createTerminalStateStore({ file: path.join(app.getPath("userData"), "terminal-state.json") });
+  return terminalState;
+}
+function terminalResourcesManager() {
+  terminalResources ??= createTerminalResources({
+    files: createTerminalFiles(),
+    git: createTerminalGit(),
+    ownerAllowed: owner => Boolean(mainWindow && owner === mainWindow.webContents && hostTerminalPageAllowed(mainWindow) && terminalDocumentTokens.has(owner)),
+    sessionAllowed: (owner, id) => terminalSessions?.owns(owner, id) === true,
+  });
+  return terminalResources;
+}
+async function prepareTerminalSession() {
+  if (!["linux", "darwin"].includes(process.platform)) return;
+  if (!rnzReady) {
+    rnzTransport = createRnzTransport({ onRequest: request => terminalResourcesManager().open(request) });
+    rnzReady = rnzTransport.start().catch(error => { rnzTransport = null; rnzReady = null; throw error; });
+  }
+  await rnzReady;
+}
+function terminalSessionManager() {
+  terminalSessions ??= createTerminalSessions({
+    loadPty: () => loadTerminalPty({ packaged: app.isPackaged, resourcesPath: process.resourcesPath }),
+    sessionEnvironment: (id, owner) => {
+      if (!mainWindow || owner !== mainWindow.webContents || !hostTerminalPageAllowed(mainWindow) || !terminalDocumentTokens.has(owner)) throw new Error("Terminal owner changed");
+      if (!rnzTransport) return {};
+      const directory = app.isPackaged ? path.join(process.resourcesPath, "terminal-cli") : __dirname;
+      return {
+        ...rnzTransport.addSession(id, owner),
+        RNZ_NODE: process.execPath,
+        RNZ_CLI: path.join(directory, "rnz-cli.mjs"),
+        PATH: [directory, process.env.PATH || ""].filter(Boolean).join(path.delimiter),
+      };
+    },
+    onRemove: (owner, id) => { rnzTransport?.revoke(id); terminalResources?.closeSession(owner, id); },
+    onData: (owner, id, data, sequence) => owner.send("host-terminal:data", id, data, sequence),
+    onExit: (owner, id, code) => owner.send("host-terminal:exit", id, code),
+  });
+  return terminalSessions;
+}
+function authorizeHostTerminal(event, token) {
+  requireMainWindowSender(event);
+  const owner = mainWindow;
+  if (!senderIsLocal(event) || !terminalSenderAllowed(event, {
+    owner,
+    localOrigin: rendererOrigin(),
+    localWorkspace: hostTerminalWorkspaceAllowed(),
+    token,
+    expectedToken: terminalDocumentTokens.get(event.sender),
+  })) throw new Error("The host terminal is only available in the local app window");
+  return event.sender;
+}
 let computerSharing;
 const sharingPrompts = new Set();
 
@@ -1566,8 +1653,23 @@ function refreshApplicationMenu() {
   );
 }
 
+function confirmTerminalDiscard() {
+  if (!mainWindow || mainWindow.isDestroyed() || !terminalDirtyOwners.has(mainWindow.webContents)) return true;
+  if (terminalDiscardConfirmed) return true;
+  const choice = dialog.showMessageBoxSync(mainWindow, { type: "warning", message: "Discard unsaved terminal file changes?", buttons: ["Keep editing", "Discard changes"], defaultId: 0, cancelId: 0, noLink: true });
+  if (choice !== 1) return false;
+  terminalDiscardConfirmed = true;
+  return true;
+}
+
 function persistEnvironments(next) {
+  if (next.activeId !== environmentsState.activeId && !confirmTerminalDiscard()) throw new Error("Unsaved terminal changes were kept");
   environmentsStore.write(next);
+  if (next.activeId !== environmentsState.activeId && mainWindow && !mainWindow.isDestroyed()) {
+    terminalDocumentTokens.delete(mainWindow.webContents);
+    terminalSessions?.closeOwner(mainWindow.webContents);
+    terminalResources?.closeOwner(mainWindow.webContents);
+  }
   environmentsState = next;
   refreshApplicationMenu();
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitle(workspaceWindowTitle(environmentsState, desktopRemoteAccess, homeWindow.cloudOrigin()));
@@ -1598,6 +1700,7 @@ async function switchLocalEnvironmentTo(targetDir, targetId, quiet = false) {
   if (!app.isPackaged) return { ok: false, error: "dev" };
   // A second switch would be un-paused by the first's finally mid-handoff.
   if (localSwitchInFlight) return { ok: false, error: "busy" };
+  if (!confirmTerminalDiscard()) return { ok: false, error: "Unsaved terminal changes were kept" };
   const previousDir = runningDataDir ?? startupEnvironmentDir(environmentsState, desktopDataDir());
   let startedProc = null;
   let switchSucceeded = false;
@@ -1676,6 +1779,7 @@ async function switchLocalEnvironmentTo(targetDir, targetId, quiet = false) {
   } finally {
     localSwitchInFlight = false;
     serverSupervisor.resume();
+    if (!switchSucceeded) terminalDiscardConfirmed = false;
     if (!switchSucceeded && (!serverProc || !serverSupervisor.isCurrent(serverProc))) {
       slog(`environment switch to ${targetDir} left no server child; restarting the active environment`);
       try {
@@ -2036,7 +2140,7 @@ function createWindow({ deferNavigation = false } = {}) {
         ...(app.isPackaged && !desktopRemoteAccess ? ["--omb-company-desktop=1"] : []), `--omb-app-version=${app.getVersion()}`],
     },
   });
-  mainWindow = win; hiddenStart = false; chromeRail.attach(win);
+  mainWindow = win; terminalDiscardConfirmed = false; hiddenStart = false; chromeRail.attach(win);
   win.on("show", () => desktopTray?.windowShown(win));
   win.on("focus", () => { if (cloudAccount?.checkoutPending()) void cloudAccount.refresh().catch(() => {}); });
   win.on("close", (event) => {
@@ -2066,6 +2170,12 @@ function createWindow({ deferNavigation = false } = {}) {
   windowStateFile.install(win);
   applyUnreadBadge(win);
   if (restored.maximized && !startupScreen) win.maximize();
+  const terminalOwner = win.webContents;
+  win.webContents.on("will-prevent-unload", event => {
+    if (terminalDirtyOwners.has(terminalOwner) && confirmTerminalDiscard()) { terminalDirtyOwners.delete(terminalOwner); event.preventDefault(); }
+  });
+  releaseTerminalOwnerOnWindowClose(win, terminalDocumentTokens, () => terminalSessions);
+  win.once("closed", () => terminalResources?.closeOwner(terminalOwner));
   win.once("closed", () => {
     if (mainWindow === win) mainWindow = null;
   });
@@ -2124,13 +2234,31 @@ function createWindow({ deferNavigation = false } = {}) {
     });
     void workspaceMenuAction(() => switchEnvironment(LOCAL_ID));
   });
+  win.webContents.on("did-start-navigation", (_event, _url, isInPlace, isMainFrame) => {
+    if (!isMainFrame || isInPlace) return;
+    terminalDocumentTokens.delete(win.webContents);
+    terminalDirtyOwners.delete(win.webContents);
+    terminalDiscardConfirmed = false;
+    terminalSessions?.closeOwner(win.webContents);
+    terminalResources?.closeOwner(win.webContents);
+  });
+  win.webContents.on("render-process-gone", () => {
+    terminalDocumentTokens.delete(win.webContents);
+    terminalDirtyOwners.delete(win.webContents);
+    terminalDiscardConfirmed = false;
+    terminalSessions?.closeOwner(win.webContents);
+    terminalResources?.closeOwner(win.webContents);
+  });
   win.webContents.on("did-navigate", (_event, url) => homeWindow.navigated(url));
   // Not did-finish-load: Electron still reports the main frame as loading then.
   win.webContents.on("did-stop-loading", () => {
     deliverPackageInstall(win);
     deliverChatLink(win);
   });
-  win.webContents.on("did-finish-load", () => void offerComputerSharing(win));
+  win.webContents.on("did-finish-load", () => {
+    issueHostTerminalDocumentToken(win);
+    void offerComputerSharing(win);
+  });
 
   // Electron has no default context menu.
   win.webContents.on("context-menu", (_event, params) => {
@@ -2378,6 +2506,8 @@ ipcMain.handle("desktop-viewer:open", localOnly("desktop-viewer:open", (event, r
   const owner = BrowserWindow.fromWebContents(event.sender);
   return openDesktopViewer(owner, rawUrl, title, contextId);
 }));
+
+registerTerminalIpc({ ipcMain, sessions: terminalSessionManager, authorize: authorizeHostTerminal, terminalState: terminalStateStore, resources: terminalResourcesManager, prepareSession: prepareTerminalSession, setDirty: (owner, dirty) => { if (dirty) { terminalDirtyOwners.add(owner); terminalDiscardConfirmed = false; } else terminalDirtyOwners.delete(owner); } });
 
 // URL validation, sandboxing, session isolation and the one-interactive-pane rule stay here, not in the renderer.
 ipcMain.handle("desktop-workspace:open", localOnly("desktop-workspace:open", (event, input) =>
@@ -3192,7 +3322,12 @@ process.once("SIGINT", requestSignalQuit);
 process.once("SIGTERM", requestSignalQuit);
 
 app.on("before-quit", (e) => {
+  if (!confirmTerminalDiscard()) { e.preventDefault(); return; }
   talk.close();
+  terminalSessions?.closeAll();
+  terminalResources?.closeAll();
+  void rnzTransport?.close();
+  if (mainWindow && !mainWindow.isDestroyed()) terminalDocumentTokens.delete(mainWindow.webContents);
   desktopShutdownStarted = true;
   startupScreen?.dispose();
   companyBackupSchedule?.close();

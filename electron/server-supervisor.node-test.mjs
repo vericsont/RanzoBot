@@ -328,6 +328,8 @@ function switchFixture(t, { startResults = [], releaseLeaseThrows = false, stopU
   let forkIndex = 0;
   const context = vm.createContext({
     app: { isPackaged: true },
+    confirmTerminalDiscard: () => true,
+    terminalDiscardConfirmed: false,
     localSwitchInFlight: false,
     runningDataDir: null,
     serverProc: null,
@@ -366,6 +368,16 @@ function switchFixture(t, { startResults = [], releaseLeaseThrows = false, stopU
   vm.runInContext(`${body}; this.switchLocalEnvironmentTo = switchLocalEnvironmentTo;`, context);
   return { context, forks, targetDir };
 }
+
+test("a cancelled unsaved-file confirmation leaves the running environment untouched", async (t) => {
+  const { context, forks, targetDir } = switchFixture(t);
+  context.confirmTerminalDiscard = () => false;
+  const result = await context.switchLocalEnvironmentTo(targetDir, "l1");
+  assert.deepEqual(plain(result), { ok: false, error: "Unsaved terminal changes were kept" });
+  assert.deepEqual(forks, []);
+  assert.deepEqual(context.serverSupervisor.calls, []);
+  assert.equal(context.environmentsState.activeId, "local");
+});
 
 test("a failed switch with no live child reforks the active environment once and adopts it", async (t) => {
   // releaseLease throws, so the orchestrator rejects before any rollback: only the safety net serves this environment again.

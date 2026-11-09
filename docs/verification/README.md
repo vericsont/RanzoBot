@@ -157,6 +157,9 @@ renderer components and isolated HTTP routes.
 The [desktop server connection smoke](desktop-server-connection.md) mounts the
 real Settings connection component in disposable Electron windows.
 
+The [terminal fixture](terminal.md) checks the interactive terminal against a
+real PTY in an isolated Electron profile.
+
 The [loading screen and tray smoke](startup-tray.md) checks the startup close
 button, hidden handoff, tray restore, and Quit in a disposable Electron profile.
 

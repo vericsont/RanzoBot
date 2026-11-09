@@ -45,6 +45,9 @@ importers:
       '@lezer/highlight':
         specifier: 1.2.5
         version: 1.2.5
+      '@lydell/node-pty':
+        specifier: 1.2.0-beta.18
+        version: 1.2.0-beta.18
       '@muse-code/sdk':
         specifier: 1.4.6
         version: 1.4.6(@types/node@26.2.0)
@@ -60,6 +63,12 @@ importers:
       '@trycua/cua-driver':
         specifier: 0.28.2
         version: 0.28.2
+      '@xterm/addon-fit':
+        specifier: 0.11.0
+        version: 0.11.0
+      '@xterm/xterm':
+        specifier: 6.0.0
+        version: 6.0.0
       ag-grid-community:
         specifier: 36.2.0
         version: 36.2.0
@@ -1519,6 +1528,39 @@ packages:
   '@lezer/lr@1.4.11':
     resolution: {integrity: sha512-UwgZcl1R66H2hDzBrA7kWyYmX6s8p5TQ+e/t7CuvgCtBEPxbEPaHYHu+pJBvTvDotEJpuQkJjbXuHiw5Cixxgw==}
 
+  '@lydell/node-pty-darwin-arm64@1.2.0-beta.18':
+    resolution: {integrity: sha512-gJizeNHkkKCoggtj5Q0yf4btK6dPfr7E063SrOh1jHXp3IyjiErU4KwT7Cn29qb/OY5pBo/Utctenl03MyBtAg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@lydell/node-pty-darwin-x64@1.2.0-beta.18':
+    resolution: {integrity: sha512-xnJQz+i5v7pkR1xo14ffTwvMm2DoK3KqPACQaJqxtMVkM7ojv14/KmkaV2jte7Q0BIzfU+VbKVUL9Zmf23G8VQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@lydell/node-pty-linux-arm64@1.2.0-beta.18':
+    resolution: {integrity: sha512-fM8jRcZDZwG7ihEOx/R7N1aGHdT4Fd6IQj1d6Jp7Qb9FeDWlIwLuVlxUkJOsW4V1ZmJe1xZl2+WR0RjqMvb2+Q==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@lydell/node-pty-linux-x64@1.2.0-beta.18':
+    resolution: {integrity: sha512-LGikvfcvoPrxXO7o1gCsd5ErrRWnQFYLxjJfX0uwBpi0oGPiTERUBLzKspzZs7wjXZqF30mnNB/C09uotu5vRA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@lydell/node-pty-win32-arm64@1.2.0-beta.18':
+    resolution: {integrity: sha512-S6h4G3zYGe+pPQxhlNxg+MvJNUIwXFxhnUufx1QT45TgratKMxQfoGPidvnwoLwuXQ3hqQ7SsI93rH8RUoL09g==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@lydell/node-pty-win32-x64@1.2.0-beta.18':
+    resolution: {integrity: sha512-wBSMeAwEL04t694ln+QbLnc98YeF3mAwWm/NP8acYDAobPw/WK7KKpk8z07iyxv0gRH2Z2/L/f6vgtnBgxE0Bg==}
+    cpu: [x64]
+    os: [win32]
+
+  '@lydell/node-pty@1.2.0-beta.18':
+    resolution: {integrity: sha512-ryy4liRcw6QBBKWDIbJgTW7Pw8NI2xjri/5s/LZg/jJ8ZVg8MgA1xI/vjpT5qTvDvPjUpU5NybJBrKRgK/QvlA==}
+
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
     engines: {node: '>= 12.13.0'}
@@ -2510,6 +2552,12 @@ packages:
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
     deprecated: this version has critical issues, please update to the latest version
+
+  '@xterm/addon-fit@0.11.0':
+    resolution: {integrity: sha512-jYcgT6xtVYhnhgxh3QgYDnnNMYTcf8ElbxxFzX0IZo+vabQqSPAjC3c1wJrKB5E19VwQei89QCiZZP86DCPF7g==}
+
+  '@xterm/xterm@6.0.0':
+    resolution: {integrity: sha512-TQwDdQGtwwDt+2cgKDLn0IRaSxYu1tSUjgKarSDkUM0ZNiSRXFpjxEsvc/Zgc5kq5omJ+V0a8/kIM2WD3sMOYg==}
 
   '@yuku-analyzer/binding-android-arm64@0.8.7':
     resolution: {integrity: sha512-pzJ++UMCZEV4s6SP3Ryvj+snWP8s7aTXFkSXRyeBF4RSALftPzfqYssHdGOmOH2QnRAtyOhhg64tdjeSGJvYRg==}
@@ -6442,6 +6490,33 @@ snapshots:
     dependencies:
       '@lezer/common': 1.5.3
 
+  '@lydell/node-pty-darwin-arm64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty-darwin-x64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty-linux-arm64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty-linux-x64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty-win32-arm64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty-win32-x64@1.2.0-beta.18':
+    optional: true
+
+  '@lydell/node-pty@1.2.0-beta.18':
+    optionalDependencies:
+      '@lydell/node-pty-darwin-arm64': 1.2.0-beta.18
+      '@lydell/node-pty-darwin-x64': 1.2.0-beta.18
+      '@lydell/node-pty-linux-arm64': 1.2.0-beta.18
+      '@lydell/node-pty-linux-x64': 1.2.0-beta.18
+      '@lydell/node-pty-win32-arm64': 1.2.0-beta.18
+      '@lydell/node-pty-win32-x64': 1.2.0-beta.18
+
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
       cross-spawn: 7.0.6
@@ -7287,6 +7362,10 @@ snapshots:
       tinyrainbow: 3.1.1
 
   '@xmldom/xmldom@0.8.13': {}
+
+  '@xterm/addon-fit@0.11.0': {}
+
+  '@xterm/xterm@6.0.0': {}
 
   '@yuku-analyzer/binding-android-arm64@0.8.7':
     optional: true

@@ -92,6 +92,50 @@ ipcRenderer.on("desktop-language:changed", (_event, language) => {
 });
 const onHomePage = !isLocalPage && homePage();
 const remoteKeys = isLocalPage ? REMOTE_SAFE : new Set([...REMOTE_SAFE, ...(updaterOffered() ? ["updater"] : []), ...(onHomePage ? HOME_PAGE : [])]);
+const hostTerminalAvailable = isLocalPage && !desktopRemoteClient;
+let hostTerminalToken = null;
+const hostTerminalDataListeners = new Set();
+const hostTerminalExitListeners = new Set();
+const hostTerminalOpenListeners = new Set();
+if (hostTerminalAvailable) {
+  ipcRenderer.on("host-terminal:document-token", (_event, token) => {
+    hostTerminalToken = typeof token === "string" && /^[a-f0-9-]{36}$/i.test(token) ? token : null;
+  });
+  ipcRenderer.on("host-terminal:data", (_event, id, data, sequence) => {
+    if (typeof id !== "string" || typeof data !== "string" || !Number.isSafeInteger(sequence) || sequence < 1) return;
+    const token = hostTerminalToken;
+    const acknowledge = () => {
+      try { if (token) ipcRenderer.send("host-terminal:ack", token, id, sequence); } catch {}
+    };
+    const listeners = [...hostTerminalDataListeners];
+    if (!listeners.length) {
+      acknowledge();
+      return;
+    }
+    void Promise.allSettled(listeners.map((listener) => Promise.resolve().then(() => listener(id, data))))
+      .then(acknowledge)
+      .catch(() => {});
+  });
+  ipcRenderer.on("host-terminal:exit", (_event, id, code) => {
+    if (typeof id === "string" && Number.isInteger(code)) {
+      for (const listener of hostTerminalExitListeners) listener(id, code);
+    }
+  });
+  ipcRenderer.on("host-terminal:open", (_event, request) => {
+    if (!request || typeof request.requestId !== "string" || typeof request.sessionId !== "string" ||
+        !request.resource || typeof request.resource.id !== "string" || typeof request.resource.label !== "string" ||
+        !["file", "directory", "git"].includes(request.resource.kind)) return;
+    const token = hostTerminalToken;
+    const listener = [...hostTerminalOpenListeners][0];
+    void Promise.resolve().then(() => listener?.(request)).then(
+      accepted => { if (token) return ipcRenderer.invoke("host-terminal:open-ack", token, request.requestId, accepted === true); },
+      () => { if (token) return ipcRenderer.invoke("host-terminal:open-ack", token, request.requestId, false); },
+    ).catch(() => {});
+  });
+}
+const hostTerminalInvoke = (method, ...args) => hostTerminalToken
+  ? ipcRenderer.invoke(`host-terminal:${method}`, hostTerminalToken, ...args)
+  : Promise.reject(new Error("The host terminal is unavailable in this page"));
 
 // Keep in parity with shared/workspace-backup-client.ts (a sandboxed preload cannot import it).
 const COMPANY_BACKUP_CLIENT_KEYS = [
@@ -353,6 +397,36 @@ const bridge = {
       return () => ipcRenderer.removeListener("desktop-viewer:state", handler);
     },
   },
+  hostTerminal: hostTerminalAvailable ? {
+    start: (input) => hostTerminalInvoke("start", input),
+    attach: (id) => hostTerminalInvoke("attach", id),
+    write: (id, data) => hostTerminalInvoke("write", id, data),
+    resize: (id, cols, rows) => hostTerminalInvoke("resize", id, cols, rows),
+    close: (id) => hostTerminalInvoke("close", id),
+    restoreState: () => hostTerminalInvoke("restore-state"),
+    saveState: (state) => hostTerminalInvoke("save-state", state),
+    setDirty: (dirty) => { if (hostTerminalToken && typeof dirty === "boolean") ipcRenderer.send("host-terminal:dirty", hostTerminalToken, dirty); },
+    listDirectory: (id, path) => hostTerminalInvoke("resource-list", id, path),
+    openChild: (id, path) => hostTerminalInvoke("resource-child", id, path),
+    readText: (id) => hostTerminalInvoke("resource-read", id),
+    saveText: (id, revision, text) => hostTerminalInvoke("resource-save", id, revision, text),
+    gitHistory: (id, cursor) => hostTerminalInvoke("resource-history", id, cursor),
+    gitCommit: (id, hash, parent) => hostTerminalInvoke("resource-commit", id, hash, parent),
+    gitDiff: (id, hash, parent, path) => hostTerminalInvoke("resource-diff", id, hash, parent, path),
+    closeResource: (id) => hostTerminalInvoke("resource-close", id),
+    onOpen: (cb) => {
+      hostTerminalOpenListeners.add(cb);
+      return () => hostTerminalOpenListeners.delete(cb);
+    },
+    onData: (cb) => {
+      hostTerminalDataListeners.add(cb);
+      return () => hostTerminalDataListeners.delete(cb);
+    },
+    onExit: (cb) => {
+      hostTerminalExitListeners.add(cb);
+      return () => hostTerminalExitListeners.delete(cb);
+    },
+  } : undefined,
   desktopWorkspace: {
     open: (input) => ipcRenderer.invoke("desktop-workspace:open", input),
     layout: (items) => ipcRenderer.invoke("desktop-workspace:layout", items),

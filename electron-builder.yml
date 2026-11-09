@@ -79,6 +79,16 @@ extraResources:
   # carries its license text, so the upstream file travels here.
   - from: third_party/onepassword-sdk/LICENSE
     to: licenses/1password-sdk-LICENSE.txt
+  - from: third_party/waveterm/LICENSE
+    to: licenses/waveterm-LICENSE.txt
+  - from: third_party/xterm/LICENSE
+    to: licenses/xterm-LICENSE.txt
+  - from: third_party/xterm-addon-fit/LICENSE
+    to: licenses/xterm-addon-fit-LICENSE.txt
+  - from: electron/rnz
+    to: terminal-cli/rnz
+  - from: electron/rnz-cli.mjs
+    to: terminal-cli/rnz-cli.mjs
   - from: dist
     to: ui
   - from: dist-server
@@ -130,6 +140,8 @@ mac:
     # node_modules entry of any tree it copies (app-builder-lib util/filter).
     - from: dist-native/duckdb/darwin-${arch}/node_modules
       to: duckdb/node_modules
+    - from: dist-native/terminal-runtime/darwin-${arch}/node_modules/@lydell
+      to: terminal-runtime/node_modules/@lydell
   extendInfo:
     NSMicrophoneUsageDescription: RanzoBot uses the microphone for voice dictation into the composer.
     NSSpeechRecognitionUsageDescription: RanzoBot transcribes your voice on-device to type messages for you.
@@ -172,6 +184,8 @@ win:
       to: browser-engine
     - from: dist-native/duckdb/win32-x64/node_modules
       to: duckdb/node_modules
+    - from: dist-native/terminal-runtime/win32-x64/node_modules/@lydell
+      to: terminal-runtime/node_modules/@lydell
     # CUA driver and SDK for Windows — must live outside ASAR for native modules
     - from: dist-native/cua-win32-x64/cua-driver.exe
       to: cua-driver.exe
@@ -225,6 +239,8 @@ linux:
       to: browser-engine
     - from: dist-native/duckdb/linux-x64/node_modules
       to: duckdb/node_modules
+    - from: dist-native/terminal-runtime/linux-x64/node_modules/@lydell
+      to: terminal-runtime/node_modules/@lydell
     - from: build/linux-openmausbot-browser.apparmor
       to: openmausbot-browser.apparmor
   desktop:

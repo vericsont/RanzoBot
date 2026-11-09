@@ -17,7 +17,7 @@ const fakeIpcRenderer = {
     listeners.get(channel)?.delete(handler);
   },
   invoke: async (...args) => { invocations.push(args); },
-  send: () => undefined,
+  send: (...args) => { invocations.push(args); },
 };
 const fakeElectron = {
   ipcRenderer: fakeIpcRenderer,
@@ -68,6 +68,81 @@ test("copyText forwards only the text over the explicit clipboard:write-text cha
   await exposed.api.copyText("hello");
   assert.deepEqual(invocations.slice(before), [["clipboard:write-text", "hello"]]);
   assert.equal("ipcRenderer" in exposed.api, false);
+});
+
+test("host terminal uses the document token, fixed actions, and detachable output subscriptions", async () => {
+  const api = exposed.api.hostTerminal;
+  assert.equal(typeof api.start, "function");
+  assert.equal("token" in exposed.api, false);
+  emit("host-terminal:document-token", "00000000-0000-4000-8000-000000000001");
+  const before = invocations.length;
+  await api.start({ cols: 80, rows: 24 });
+  await api.attach("session");
+  await api.write("session", "hello\r");
+  await api.resize("session", 100, 40);
+  await api.close("session");
+  await api.restoreState();
+  await api.saveState({ version: 1, sessions: [], layout: null });
+  assert.deepEqual(invocations.slice(before), [
+    ["host-terminal:start", "00000000-0000-4000-8000-000000000001", { cols: 80, rows: 24 }],
+    ["host-terminal:attach", "00000000-0000-4000-8000-000000000001", "session"],
+    ["host-terminal:write", "00000000-0000-4000-8000-000000000001", "session", "hello\r"],
+    ["host-terminal:resize", "00000000-0000-4000-8000-000000000001", "session", 100, 40],
+    ["host-terminal:close", "00000000-0000-4000-8000-000000000001", "session"],
+    ["host-terminal:restore-state", "00000000-0000-4000-8000-000000000001"],
+    ["host-terminal:save-state", "00000000-0000-4000-8000-000000000001", { version: 1, sessions: [], layout: null }],
+  ]);
+  const received = [];
+  let finishWrite;
+  const writeDone = new Promise(resolve => { finishWrite = resolve; });
+  const stopData = api.onData(async (id, data) => {
+    received.push(["data", id, data]);
+    await writeDone;
+  });
+  const stopRejected = api.onData(async () => { throw new Error("fixture write failure"); });
+  const stopExit = api.onExit((id, code) => received.push(["exit", id, code]));
+  const beforeData = invocations.length;
+  emit("host-terminal:data", "session", "prompt> ", 1);
+  await Promise.resolve();
+  assert.deepEqual(received, [["data", "session", "prompt> "]]);
+  assert.equal(invocations.slice(beforeData).some(call => call[0] === "host-terminal:ack"), false);
+  finishWrite();
+  await new Promise(resolve => setImmediate(resolve));
+  emit("host-terminal:exit", "session", 75);
+  stopData(); stopRejected(); stopExit();
+  const beforeNoListeners = invocations.length;
+  emit("host-terminal:data", "session", "ignored", 2);
+  assert.deepEqual(received, [["data", "session", "prompt> "], ["exit", "session", 75]]);
+  assert.deepEqual(invocations.slice(beforeData).filter(call => call[0] === "host-terminal:ack"), [
+    ["host-terminal:ack", "00000000-0000-4000-8000-000000000001", "session", 1],
+    ["host-terminal:ack", "00000000-0000-4000-8000-000000000001", "session", 2],
+  ]);
+  assert.deepEqual(invocations.slice(beforeNoListeners), [
+    ["host-terminal:ack", "00000000-0000-4000-8000-000000000001", "session", 2],
+  ]);
+});
+
+test("terminal resource events acknowledge only their local listener and use the document token", async () => {
+  const api = exposed.api.hostTerminal;
+  const token = "00000000-0000-4000-8000-000000000001";
+  emit("host-terminal:document-token", token);
+  const request = { requestId: "request", sessionId: "session", resource: { id: "grant", kind: "file", label: "file.txt" } };
+  const received = [];
+  const stop = api.onOpen(value => { received.push(value); return true; });
+  const before = invocations.length;
+  emit("host-terminal:open", request);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(received, [request]);
+  assert.deepEqual(invocations.slice(before), [["host-terminal:open-ack", token, "request", true]]);
+  stop();
+  emit("host-terminal:open", request);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(invocations.at(-1), ["host-terminal:open-ack", token, "request", false]);
+  const beforeCalls = invocations.length;
+  await api.readText("grant");
+  await api.saveText("grant", "revision", "draft");
+  api.setDirty(true);
+  assert.deepEqual(invocations.slice(beforeCalls), [["host-terminal:resource-read", token, "grant"], ["host-terminal:resource-save", token, "grant", "revision", "draft"], ["host-terminal:dirty", token, true]]);
 });
 
 test("browser control forwards a separate per-device capability, not the cloud grant", async () => {

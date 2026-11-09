@@ -1,4 +1,5 @@
 import { cloudAsleep, onCloudPower } from "../lib/cloud-power";
+import { canLeaveTerminalDrafts } from "@/lib/terminal-draft-guard";
 import { api, ApiError } from "./api";
 import {
   createContext,
@@ -567,7 +568,7 @@ export interface AppState {
   liveCallVersion: number;
   liveCallLookupSeq: number;
   selectedId: string;
-  activeView: "chat" | "team-map" | "routines" | "files" | "web-panel";
+  activeView: "chat" | "team-map" | "routines" | "files" | "web-panel" | "terminal";
   /** Folders a finished move left on this computer, for Files to offer sharing. */
   filesSuggest: string[] | null; webPanelId?: string;
   routines: Routine[];
@@ -651,6 +652,7 @@ export type Action =
   | { type: "showRoutines"; section?: "schedule" | "logs"; view?: "calendar" | "list"; botId?: string; routineId?: string; runStatus?: RoutineRunStatusFilter }
   | { type: "showTeamMap" } | { type: "showWebPanel"; id: string }
   | { type: "showFiles"; suggest?: string[] }
+  | { type: "showTerminal" }
   | { type: "showChat" }
   | { type: "routinesHydrated"; routines: Routine[]; runs: RoutineRun[]; since?: number }
   | { type: "routinesLoadFailed" } | { type: "routineRunsLoaded"; runs: RoutineRun[]; from?: number; to?: number }
@@ -993,6 +995,18 @@ export function reducer(state: AppState, action: Action): AppState {
       };
     case "showChat":
       return state.activeView === "chat" ? state : { ...state, activeView: "chat" };
+    case "showTerminal":
+      return {
+        ...state,
+        activeView: "terminal",
+        settingsOpen: false,
+        computerOpen: false,
+        inspectorOpen: false,
+        activityOpen: false,
+        notificationsOpen: false,
+        appSettingsOpen: false,
+        pluginsOpen: false,
+      };
     case "showTeamMap":
     case "showFiles": case "showWebPanel":
       return {
@@ -2106,6 +2120,27 @@ function restoreBotSettingsSection(state: AppState): AppState {
   return section ? { ...state, botSettingsSection: section, botSettingsSectionStored: true } : state;
 }
 
+function leavesTerminal(action: Action): boolean {
+  switch (action.type) {
+    case "showChat":
+    case "showRoutines":
+    case "showTeamMap":
+    case "showFiles":
+    case "showWebPanel":
+    case "select":
+    case "openDataResult":
+    case "openSignIn":
+    case "newTask":
+    case "switchTask":
+    case "duplicateBot":
+      return true;
+    case "newBot":
+      return !action.preserveSelection;
+    default:
+      return false;
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const taskWrites = useRef(new Map<string, { botId: string; updatesDefault: boolean; promise: Promise<BotAnnouncement>; execution: Promise<unknown>; patch: TaskUpdatePatch }>()).current;
   const withTaskWrites = (bot: BotAnnouncement): BotAnnouncement => ({
@@ -2262,7 +2297,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
 
     const wrapped: React.Dispatch<Action> = (action) => {
-      if (["select", "newTask", "switchTask", "newGroupTask", "switchGroupTask", "showChat", "showRoutines", "showTeamMap", "showFiles", "showWebPanel"].includes(action.type)) selectionRevision.current++;
+      if (stateRef.current.activeView === "terminal" && leavesTerminal(action) && !canLeaveTerminalDrafts()) return;
+      if (["select", "newTask", "switchTask", "newGroupTask", "switchGroupTask", "showChat", "showRoutines", "showTeamMap", "showFiles", "showWebPanel", "showTerminal"].includes(action.type)) selectionRevision.current++;
       // Pin before any await or optimistic state change.
       action = pinBotThreadAction(action, stateRef.current.bots);
       if (action.type === "taskSwitched") action = { ...action, bot: withTaskWrites(action.bot) as Bot };

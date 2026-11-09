@@ -18,7 +18,7 @@ vi.mock("@/lib/sidebar-preferences", async (importOriginal) => ({
 }));
 vi.mock("@/lib/web-panel-preferences", () => ({ useWebPanels: () => fixture.panels }));
 vi.mock("./UpdateIndicator", () => ({ UpdateIndicator: () => null }));
-import { SidebarAppsButton, SidebarBottomButtons, SidebarFooterNav } from "./SidebarFooterNav";
+import { SidebarAppsButton, SidebarBottomButtons, SidebarFooterNav, SidebarTerminalButton } from "./SidebarFooterNav";
 
 type Props = { children?: ReactNode; [key: string]: unknown };
 function nodes(value: ReactNode): ReactElement<Props>[] {
@@ -59,8 +59,25 @@ describe("sidebar footer places", () => {
     expect(html).not.toContain('data-sidebar-nav="apps"');
   });
 
-  it("leaves no places in Simple mode's sidebar while Files is off: Automations and Team map are in the bottom bar", () => {
+  it("leaves no places in Simple mode's sidebar while Files and the local terminal are unavailable", () => {
     expect(render("comfortable").html).toBe("");
+  });
+
+  it("shows the This computer terminal only where its local desktop bridge exists", () => {
+    vi.stubGlobal("window", { ogb: { remoteClient: { active: false }, hostTerminal: {} } });
+    let { html } = render("comfortable");
+    expect(html).toContain('data-sidebar-nav="terminal"');
+    const row = nodes(SidebarTerminalButton({ density: "comfortable" })).find((node) => node.props.id === "terminal")!;
+    (row.props.onClick as () => void)();
+    expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "showTerminal" });
+
+    fixture.advanced = true;
+    fixture.state.activeView = "terminal";
+    ({ html } = render("comfortable"));
+    expect(html).toMatch(/data-sidebar-nav="terminal"[^>]*aria-current="page"/);
+
+    vi.stubGlobal("window", { ogb: { remoteClient: { active: true }, hostTerminal: {} } });
+    expect(render("comfortable").html).not.toContain('data-sidebar-nav="terminal"');
   });
 
   it.each([false, true])("puts Automations on the avatars-only density ahead of Apps, with Team map (advanced: %s)", (advanced) => {
